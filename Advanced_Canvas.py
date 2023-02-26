@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter.font import Font
+import cv2
+from PIL import Image, ImageTk
 from math import sqrt, ceil, pi, sin, cos, radians
 
 
@@ -344,20 +346,20 @@ class Advanced_Entry(object):
 
 
 class Advanced_Image(object):
-    images = {}
-
     def __init__(self, canvas: tk.Canvas, x: int, y: int, src: str = None):
         self.canvas = canvas
         self.x = x
         self.y = y
         self.src = src
 
+        self.zoom = 1
         self.object = None
         self.update = False
 
         if src is not None:
-            self.img = tk.PhotoImage(file=self.src)
-            self.images.update({self.src: self.img})
+            # load image
+            self.cv2_img = cv2.imread(self.src)
+            self.update_tkimg()
 
     def draw(self):
         # update the image if necessary
@@ -371,21 +373,38 @@ class Advanced_Image(object):
 
     # change the Image that should be visualised
     def change_img(self, path: str):
-        img = tk.PhotoImage(file=path)
         self.src = path
 
-        # check if the image is in the dict
-        if self.src in self.images:
-            self.img = self.images[self.src]
-        # if it's not assign a new one
-        else:
-            self.images.update({self.src: img})
+        # open image through open-cv
+        self.cv2_img = cv2.imread(self.src)
 
-            self.img = self.images[self.src]
+        img = cv2.cvtColor(self.cv2_img, cv2.COLOR_BGR2RGB)
+        pil_img = Image.fromarray(img)
+        self.img = ImageTk.PhotoImage(pil_img)
 
         # update the visualised image
         if self.object is not None:
             self.canvas.itemconfigure(self.object, image=self.img)
+
+    # convert open-cv image to Tkinter img
+    def update_tkimg(self):
+        img = cv2.cvtColor(self.cv2_img, cv2.COLOR_BGR2RGB)
+        pil_img = Image.fromarray(img)
+        self.img = ImageTk.PhotoImage(pil_img)
+
+    # change zoom
+    def set_zoom(self, zoom: float):
+        height, width = cv2.imread(self.src).shape[:2]
+
+        if round(width+self.zoom) > 0:
+            # change image size
+            self.cv2_img = cv2.resize(cv2.imread(self.src), (round(width+self.zoom), round(height+(height/width)*self.zoom)))
+            self.update_tkimg()
+
+        # update zoom
+        self.zoom = zoom
+
+        self.canvas.itemconfigure(self.object, image=self.img)
 
     # erase object from the screen
     def clear(self):
