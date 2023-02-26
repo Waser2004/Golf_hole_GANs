@@ -6,97 +6,26 @@ from math import sqrt, ceil, pi, sin, cos, radians
 
 
 class Advanced_Circle(object):
-    def __init__(self, canvas: tk.Canvas, x: int, y: int, radius: int, outline: (int, int, int), color: (int, int, int)):
+    def __init__(self, canvas: tk.Canvas, x: int, y: int, radius: int, color: (int, int, int), outline: (int, int, int) = None):
         self.canvas = canvas
         self.x = x
         self.y = y
         self.r = radius
-        self.ol = list(outline)
+        self.ol = list(color) if outline is None else list(outline)
         self.c = list(color)
 
-        self.scroll = 0
-
         self.object = None
-        self.update = False
+
+        self.background = False
+        self.foreground = False
 
     # draw circle on the screen
     def draw(self):
-        if self.update:
-            self.clear()
-
         if self.object is None:
-            self.object = self.canvas.create_oval(self.x - self.r, self.y - self.r+self.scroll, self.x + self.r, self.y + self.r+self.scroll, outline=self.rgb_to_hex(self.ol[0], self.ol[1], self.ol[2]), fill=self.rgb_to_hex(self.c[0], self.c[1], self.c[2]))
+            self.object = self.canvas.create_oval(self.x - self.r, self.y - self.r, self.x + self.r, self.y + self.r, outline=self.rgb_to_hex(self.ol), fill=self.rgb_to_hex(self.c))
 
-    # erase circle from the screen
-    def clear(self):
-        self.canvas.delete(self.object)
-        self.object = None
-
-        self.update = False
-
-    # change the position of the circle
-    def re_pos(self, x: int, y: int):
-        # relocate circle
-        if self.object is not None:
-            self.canvas.coords(self.object, x - self.r, y - self.r+self.scroll, x + self.r, y + self.r+self.scroll)
-            self.canvas.tag_raise(self.object, tk.ALL)
-
-        # set class positions
-        self.x = x
-        self.y = y
-
-    # update color
-    def set_color(self, color: (int, int, int)):
-        # update class color
-        self.c = color
-
-        # update color on screen
-        self.canvas.itemconfig(self.object, fill=self.rgb_to_hex(self.c[0], self.c[1], self.c[2]))
-
-    # update outline
-    def set_outline(self, color: (int, int, int)):
-        # update class color
-        self.ol = color
-
-        # update color on screen
-        self.canvas.itemconfig(self.object, outline=self.rgb_to_hex(self.ol[0], self.ol[1], self.ol[2]))
-
-    # check if it hase been pressed
-    def is_pressed(self, event) -> bool:
-        if sqrt((event.x - self.x)**2 + (event.y - (self.y+self.scroll))**2) <= self.r:
-            return True
-        else:
-            return False
-
-    @staticmethod
-    def rgb_to_hex(r: int, g: int, b: int):
-        assert all(0 <= color <= 255 for color in (r, g, b)), "all rgb values have to be between 0 and 255"
-
-        return '#{:02x}{:02x}{:02x}'.format(r, g, b)
-
-
-class Advanced_Line(object):
-    def __init__(self, canvas: tk.Canvas, x1: int, y1: int, x2: int, y2: int, thickness: int, color: (int, int, int)):
-        self.canvas = canvas
-        self.x1 = x1
-        self.y1 = y1
-        self.x2 = x2
-        self.y2 = y2
-        self.t = thickness
-        self.c = list(color)
-
-        self.scroll = 0
-
-        self.object = None
-        self.update = False
-
-    # draw circle on the screen
-    def draw(self):
-        if self.update:
-            self.clear()
-
-        if self.object is None:
-            self.object = self.canvas.create_line(self.x1, self.y1+self.scroll, self.x2, self.y2+self.scroll, fill=self.rgb_to_hex(self.c[0], self.c[1], self.c[2]), width=self.t)
+            # update z layer pos
+            self.__update_z_pos()
 
     # erase circle from the screen
     def clear(self):
@@ -104,34 +33,189 @@ class Advanced_Line(object):
             self.canvas.delete(self.object)
             self.object = None
 
-            self.update = False
+    # change the position of the circle
+    def set_pos(self, x: int, y: int):
+        # set class parameters
+        self.x = x
+        self.y = y
 
-    # change the position of the object
-    def re_pos(self, x1: int, y1: int, x2: int, y2: int):
-        # change position on the screen
+        # change position
         if self.object is not None:
-            self.canvas.coords(self.object, x1, y1+self.scroll, x2, y2+self.scroll)
+            self.canvas.coords(self.object, self.x-self.r, self.y-self.r, self.x+self.r, self.y+self.r)
             self.canvas.tag_raise(self.object, tk.ALL)
 
-        # set class positions
+            # update z layer pos
+            self.__update_z_pos()
+
+    # change radius
+    def set_radius(self, radius: int):
+        # set class parameter
+        self.r = radius
+
+        # change radius
+        if self.object is not None:
+            self.canvas.coords(self.object, self.x-self.r, self.y-self.r, self.x+self.r, self.y+self.r)
+            self.canvas.tag_raise(self.object, tk.ALL)
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # update color
+    def set_color(self, color: (int, int, int), outline: (int, int, int) = None):
+        # update class parameters
+        self.c = color
+        self.ol = color if outline is None else outline
+
+        # change color
+        if self.object is not None:
+            self.canvas.itemconfig(self.object, fill=self.rgb_to_hex(self.c), outline=self.rgb_to_hex(self.ol))
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # put into foreground
+    def set_to_foreground(self, forever: bool = False):
+        if self.object is not None:
+            self.canvas.tag_raise(self.object, tk.ALL)
+
+        # update z layer state
+        self.foreground = forever
+        self.background = False if forever or self.background is False else True
+
+    # set into the background
+    def set_to_background(self, forever: bool = False):
+        if self.object is not None:
+            self.canvas.tag_lower(self.object, tk.ALL)
+
+        # update z layer state
+        self.background = forever
+        self.foreground = False if forever or self.foreground is False else True
+
+    # check if it hase been pressed
+    def is_pressed(self, event) -> bool:
+        if sqrt((event.x - self.x)**2 + (event.y - self.y)**2) <= self.r:
+            return True
+        else:
+            return False
+
+    # update z position
+    def __update_z_pos(self):
+        # move to foreground
+        if self.foreground:
+            self.set_to_foreground()
+        # move to background
+        elif self.background:
+            self.set_to_foreground()
+
+    # convert rgb to hex
+    @staticmethod
+    def rgb_to_hex(rgb):
+        assert all(0 <= color <= 255 for color in rgb), "all rgb values have to be between 0 and 255"
+
+        return '#{:02x}{:02x}{:02x}'.format(rgb[0], rgb[1], rgb[2])
+
+
+class Advanced_Line(object):
+    def __init__(self, canvas: tk.Canvas, x1: int, y1: int, x2: int, y2: int, width: int, color: (int, int, int)):
+        self.canvas = canvas
         self.x1 = x1
         self.y1 = y1
         self.x2 = x2
         self.y2 = y2
+        self.w = width
+        self.c = list(color)
+
+        self.object = None
+
+        self.background = False
+        self.foreground = False
+
+    # draw circle on the screen
+    def draw(self):
+        if self.object is None:
+            self.object = self.canvas.create_line(self.x1, self.y1, self.x2, self.y2, fill=self.rgb_to_hex(self.c), width=self.w)
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # erase circle from the screen
+    def clear(self):
+        if self.object is not None:
+            self.canvas.delete(self.object)
+            self.object = None
+
+    # change the position of the object
+    def set_pos(self, x1: int = None, y1: int = None, x2: int = None, y2: int = None):
+        # set class parameters
+        self.x1 = x1 if x1 is not None else self.x1
+        self.y1 = y1 if x1 is not None else self.y1
+        self.x2 = x2 if x1 is not None else self.x2
+        self.y2 = y2 if x1 is not None else self.y2
+
+        # change position
+        if self.object is not None:
+            self.canvas.coords(self.object, self.x1, self.y1, self.x2, self.y2)
+            self.canvas.tag_raise(self.object, tk.ALL)
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    def set_width(self, width: int):
+        # set class parameter
+        self.w = width
+
+        # change width
+        if self.object is not None:
+            self.canvas.itemconfigure(self.object, width=self.w)
+
+            # update z layer pos
+            self.__update_z_pos()
 
     # update color
     def set_color(self, color: (int, int, int)):
-        # update class color
+        # set class parameter
         self.c = color
 
-        # update color on screen
-        self.canvas.itemconfig(self.object, fill=self.rgb_to_hex(self.c[0], self.c[1], self.c[2]))
+        # change color
+        if self.object is not None:
+            self.canvas.itemconfig(self.object, fill=self.rgb_to_hex(self.c))
 
+            # update z layer pos
+            self.__update_z_pos()
+
+    # put into foreground
+    def set_to_foreground(self, forever: bool = False):
+        if self.object is not None:
+            self.canvas.tag_raise(self.object, tk.ALL)
+
+        # update z layer state
+        self.foreground = forever
+        self.background = False if forever or self.background is False else True
+
+    # set into the background
+    def set_to_background(self, forever: bool = False):
+        if self.object is not None:
+            self.canvas.tag_lower(self.object, tk.ALL)
+
+        # update z layer state
+        self.background = forever
+        self.foreground = False if forever or self.foreground is False else True
+
+    # update z position
+    def __update_z_pos(self):
+        # move to foreground
+        if self.foreground:
+            self.set_to_foreground()
+        # move to background
+        elif self.background:
+            self.set_to_foreground()
+
+    # convert rgb to hex
     @staticmethod
-    def rgb_to_hex(r: int, g: int, b: int):
-        assert all(0 <= color <= 255 for color in (r, g, b)), "all rgb values have to be between 0 and 255"
+    def rgb_to_hex(rgb):
+        assert all(0 <= color <= 255 for color in rgb), "all rgb values have to be between 0 and 255"
 
-        return '#{:02x}{:02x}{:02x}'.format(r, g, b)
+        return '#{:02x}{:02x}{:02x}'.format(rgb[0], rgb[1], rgb[2])
 
 
 class Advanced_Text(object):
@@ -142,84 +226,143 @@ class Advanced_Text(object):
         self.txt = text
         self.c = list(color)
         self.font = font
-
-        if anchor is None:
-            self.anchor = tk.NW
-        else:
-            self.anchor = anchor
-
-        self.scroll = 0
+        self.anchor = tk.NW if anchor is None else anchor
 
         self.object = None
-        self.update = False
+
+        self.foreground = False
+        self.background = False
 
     # draw circle on the screen
     def draw(self):
-        if self.update:
-            self.clear()
-
         if self.object is None:
-            self.object = self.canvas.create_text(self.x, self.y + self.scroll, text=self.txt, fill=self.rgb_to_hex(self.c[0], self.c[1], self.c[2]), font=self.font, anchor=self.anchor)
+            self.object = self.canvas.create_text(self.x, self.y, text=self.txt, fill=self.rgb_to_hex(self.c), font=self.font, anchor=self.anchor)
+
+            # update z layer pos
+            self.__update_z_pos()
 
     # erase circle from the screen
     def clear(self):
-        self.canvas.delete(self.object)
-        self.object = None
-
-        self.update = False
-
-    # change the position of the circle
-    def re_pos(self, x: int, y: int):
-        # change position on the screen
         if self.object is not None:
-            self.canvas.coords(self.object, x, y+self.scroll)
-            self.canvas.tag_raise(self.object, tk.ALL)
+            self.canvas.delete(self.object)
+            self.object = None
 
-        # set class positions
+    # change position
+    def set_pos(self, x: int, y: int):
+        # set class parameters
         self.x = x
         self.y = y
 
-    # update color
-    def set_color(self, color: (int, int, int)):
-        # update class color
-        self.c = color
+        # change position
+        if self.object is not None:
+            self.canvas.coords(self.object, self.x, self.y)
+            self.canvas.tag_raise(self.object, tk.ALL)
 
-        # update color on screen
-        self.canvas.itemconfig(self.object, fill=self.rgb_to_hex(self.c[0], self.c[1], self.c[2]))
+            # update z layer pos
+            self.__update_z_pos()
 
-    # set a new object
+    # change text
     def set_text(self, text: str):
-        # update label on screen
-        self.canvas.itemconfig(self.object, text=text)
-        self.canvas.tag_raise(self.object, tk.ALL)
-
-        # set class object
+        # set class parameters
         self.txt = text
 
+        # update text
+        if self.object is not None:
+            self.canvas.itemconfig(self.object, text=self.txt)
+            self.canvas.tag_raise(self.object, tk.ALL)
+
+        # update z layer pos
+        self.__update_z_pos()
+
+    # change color
+    def set_color(self, color: (int, int, int)):
+        # update class parameters
+        self.c = color
+
+        # update color
+        if self.object is not None:
+            self.canvas.itemconfig(self.object, fill=self.rgb_to_hex(self.c))
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # change font
+    def set_font(self, font: Font):
+        # update class parameters
+        self.font = font
+
+        # update font
+        if self.object is not None:
+            self.canvas.itemconfig(self.object, font=self.font)
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # change font
+    def set_anchor(self, anchor):
+        # update class parameters
+        self.anchor = anchor
+
+        # update anchor
+        if self.object is not None:
+            self.canvas.itemconfig(self.object, anchor=self.anchor)
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # put into foreground
+    def set_to_foreground(self, forever: bool = False):
+        if self.object is not None:
+            self.canvas.tag_raise(self.object, tk.ALL)
+
+        # update z layer state
+        self.foreground = forever
+        self.background = False if forever or self.background is False else True
+
+    # set into the background
+    def set_to_background(self, forever: bool = False):
+        if self.object is not None:
+            self.canvas.tag_lower(self.object, tk.ALL)
+
+        # update z layer state
+        self.background = forever
+        self.foreground = False if forever or self.foreground is False else True
+
+    # update z position
+    def __update_z_pos(self):
+        # move to foreground
+        if self.foreground:
+            self.set_to_foreground()
+        # move to background
+        elif self.background:
+            self.set_to_foreground()
+
+    # convert rgb to hex
     @staticmethod
-    def rgb_to_hex(r: int, g: int, b: int):
-        assert all(0 <= color <= 255 for color in (r, g, b)), "all rgb values have to be between 0 and 255"
+    def rgb_to_hex(rgb):
+        assert all(0 <= color <= 255 for color in rgb), "all rgb values have to be between 0 and 255"
 
-        return '#{:02x}{:02x}{:02x}'.format(r, g, b)
+        return '#{:02x}{:02x}{:02x}'.format(rgb[0], rgb[1], rgb[2])
 
 
-class Advanced_Square(object):
-    def __init__(self, canvas: tk.Canvas, x: int, y: int, width: int, height: int, outline: (int, int, int), color: (int, int, int), radius: int = 0):
+class Advanced_Rectangle(object):
+    def __init__(self, canvas: tk.Canvas, x: int, y: int, width: int, height: int, outline: (int, int, int), color: (int, int, int) = None, radius: int = 0):
         self.canvas = canvas
         self.x = x
         self.y = y
         self.w = width
         self.h = height
-        self.o = list(outline)
+        self.o = list(color) if outline is None else list(outline)
         self.c = list(color)
         self.r = radius
-
-        self.scroll = 0
 
         self.object = None
         self.update = False
 
-    # draw circle on the screen
+        self.foreground = False
+        self.background = False
+
+    # draw square on the screen
     def draw(self):
         if self.update:
             self.clear()
@@ -227,75 +370,229 @@ class Advanced_Square(object):
         if self.object is None:
             # no edge radius
             if self.r < 1:
-                self.object = self.canvas.create_rectangle(self.x, self.y+self.scroll, self.x + self.w, self.y + self.h, outline=self.rgb_to_hex(self.o[0], self.o[1], self.o[2]), fill=self.rgb_to_hex(self.c[0], self.c[1], self.c[2]))
-            # add edge radius
+                self.object = self.canvas.create_rectangle(self.x, self.y, self.x+self.w, self.y+self.h, outline=self.rgb_to_hex(self.o), fill=self.rgb_to_hex(self.c))
+            # add corner radius
             else:
-                # calculate positions of the rounded edges
+                # calculate positions of the rounded corners
                 length = self.r+1
-                lines_nw = [[self.x+self.r-cos(radians(90/length*i))*self.r, self.y+self.r-sin(radians(90/length*i))*self.r+self.scroll] for i in range(length+1)]
-                lines_ne = [[self.x+self.w-self.r+sin(radians(90/length*i))*self.r, self.y+self.r-cos(radians(90/length*i))*self.r+self.scroll] for i in range(length+1)]
-                lines_se = [[self.x+self.w-self.r+cos(radians(90/length*i))*self.r, self.y+self.h-self.r+sin(radians(90/length*i))*self.r+self.scroll] for i in range(length+1)]
-                lines_sw = [[self.x+self.r-sin(radians(90/length*i))*self.r, self.y+self.h-self.r+cos(radians(90/length*i))*self.r+self.scroll] for i in range(length+1)]
+                lines_nw = [[self.x+self.r-cos(radians(90/length*i))*self.r, self.y+self.r-sin(radians(90/length*i))*self.r] for i in range(length+1)]
+                lines_ne = [[self.x+self.w-self.r+sin(radians(90/length*i))*self.r, self.y+self.r-cos(radians(90/length*i))*self.r] for i in range(length+1)]
+                lines_se = [[self.x+self.w-self.r+cos(radians(90/length*i))*self.r, self.y+self.h-self.r+sin(radians(90/length*i))*self.r] for i in range(length+1)]
+                lines_sw = [[self.x+self.r-sin(radians(90/length*i))*self.r, self.y+self.h-self.r+cos(radians(90/length*i))*self.r] for i in range(length+1)]
 
-                self.object = self.canvas.create_polygon(lines_nw, lines_ne, lines_se, lines_sw, outline=self.rgb_to_hex(self.o[0], self.o[1], self.o[2]), fill=self.rgb_to_hex(self.c[0], self.c[1], self.c[2]))
+                self.object = self.canvas.create_polygon(lines_nw, lines_ne, lines_se, lines_sw, outline=self.rgb_to_hex(self.o), fill=self.rgb_to_hex(self.c))
+
+            # update z layer pos
+            self.__update_z_pos()
 
     # erase circle from the screen
     def clear(self):
-        self.canvas.delete(self.object)
-        self.object = None
+        if self.object is not None:
+            self.canvas.delete(self.object)
+            self.object = None
 
-        self.update = False
+            self.update = False
 
-    # change the position of the circle
-    def re_pos(self, x: int, y: int, update: bool = True):
-        # set class positions
+    # change position
+    def set_pos(self, x: int, y: int, update: bool = True):
+        # set class parameters
         self.x = x
         self.y = y
 
-        # update their location on the screen
+        # update location
         if update:
             self.update = True
             self.draw()
 
-    # change height and width
-    def re_size(self, width: int, height: int, update: bool = True):
-        # update class width, height
+    # change size
+    def set_size(self, width: int, height: int, update: bool = True):
+        # update class parameters
         self.w = width
         self.h = height
 
-        # update their location on the screen
+        # update size
         if update:
             self.update = True
             self.draw()
 
-    # update color
-    def set_color(self, color: (int, int, int)):
-        # update class color
+    # change color
+    def set_color(self, color: (int, int, int), outline: (int, int, int) = None):
+        # update class parameters
         self.c = color
+        self.o = color if outline is None else outline
 
-        # update color on screen
-        self.canvas.itemconfig(self.object, fill=self.rgb_to_hex(self.c[0], self.c[1], self.c[2]))
+        # update color
+        if self.object is not None:
+            self.canvas.itemconfig(self.object, fill=self.rgb_to_hex(self.c), outline=self.rgb_to_hex(self.o))
 
-    # update outline
-    def set_outline(self, color: (int, int, int)):
-        # update class color
-        self.o = color
+            # update z layer pos
+            self.__update_z_pos()
 
-        # update color on screen
-        self.canvas.itemconfig(self.object, outline=self.rgb_to_hex(self.o[0], self.o[1], self.o[2]))
+    # change corner radius
+    def set_corner_radius(self, radius: int, update: bool = True):
+        # set class parameter
+        self.r = radius
 
-    # check if it hase been pressed
+        # update corner radius
+        if update:
+            self.update = True
+            self.draw()
+
+    # check if it has been pressed
     def is_pressed(self, event) -> bool:
         if self.x <= event.x <= self.x + self.w and self.y <= event.y <= self.y + self.h:
             return True
         else:
             return False
 
-    @staticmethod
-    def rgb_to_hex(r: int, g: int, b: int):
-        assert all(0 <= color <= 255 for color in (r, g, b)), "all rgb values have to be between 0 and 255"
+    # put into foreground
+    def set_to_foreground(self, forever: bool = False):
+        if self.object is not None:
+            self.canvas.tag_raise(self.object, tk.ALL)
 
-        return '#{:02x}{:02x}{:02x}'.format(r, g, b)
+        # update z layer state
+        self.foreground = forever
+        self.background = False if forever or self.background is False else True
+
+    # set into the background
+    def set_to_background(self, forever: bool = False):
+        if self.object is not None:
+            self.canvas.tag_lower(self.object, tk.ALL)
+
+        # update z layer state
+        self.background = forever
+        self.foreground = False if forever or self.foreground is False else True
+
+    # update z position
+    def __update_z_pos(self):
+        # move to foreground
+        if self.foreground:
+            self.set_to_foreground()
+        # move to background
+        elif self.background:
+            self.set_to_foreground()
+
+    # convert rgb to hex
+    @staticmethod
+    def rgb_to_hex(rgb):
+        assert all(0 <= color <= 255 for color in rgb), "all rgb values have to be between 0 and 255"
+
+        return '#{:02x}{:02x}{:02x}'.format(rgb[0], rgb[1], rgb[2])
+
+
+class Advanced_Image(object):
+    def __init__(self, canvas: tk.Canvas, x: int, y: int, src: str = None):
+        self.canvas = canvas
+        self.x = x
+        self.y = y
+        self.src = src
+
+        self.object = None
+
+        self.foreground = False
+        self.background = False
+
+        if src is not None:
+            # load image
+            self.cv2_img = cv2.imread(self.src)
+            self.update_tkimg()
+
+    # draw image
+    def draw(self):
+        # draw if it hasn't been drawn jet
+        if self.object is None and self.src is not None:
+            self.object = self.canvas.create_image(self.x, self.y, image=self.img, anchor=tk.NW)
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # erase image
+    def clear(self):
+        if self.object is not None:
+            self.canvas.delete(self.object)
+            self.object = None
+
+    # change position
+    def set_pos(self, x, y):
+        # set class parameters
+        self.x = x
+        self.y = y
+
+        # change position
+        if self.object is not None:
+            self.canvas.coords(self.object, x, y)
+            self.canvas.tag_raise(self.object, tk.ALL)
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # change size
+    def set_size(self, width: int, height: int = None):
+        c_h, c_w = cv2.imread(self.src).shape[:2]
+        height = width/(c_h/c_w) if height is None else height
+
+        # change image size
+        self.cv2_img = cv2.resize(cv2.imread(self.src), (width, height))
+        self.__update_tkimg()
+
+        # change image
+        if self.object is not None:
+            self.canvas.itemconfigure(self.object, image=self.img)
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # change image
+    def set_img(self, path: str):
+        self.src = path
+
+        # open image through open-cv
+        self.cv2_img = cv2.imread(self.src)
+        self.__update_tkimg()
+
+        # update image
+        if self.object is not None:
+            self.canvas.itemconfigure(self.object, image=self.img)
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # return size
+    def get_size(self) -> (int, int):
+        return cv2.imread(self.src).shape[:2]
+
+    # put into foreground
+    def set_to_foreground(self, forever: bool = False):
+        if self.object is not None:
+            self.canvas.tag_raise(self.object, tk.ALL)
+
+        # update z layer state
+        self.foreground = forever
+        self.background = False if forever or self.background is False else True
+
+    # set into the background
+    def set_to_background(self, forever: bool = False):
+        if self.object is not None:
+            self.canvas.tag_lower(self.object, tk.ALL)
+
+        # update z layer state
+        self.background = forever
+        self.foreground = False if forever or self.foreground is False else True
+
+    # update z position
+    def __update_z_pos(self):
+        # move to foreground
+        if self.foreground:
+            self.set_to_foreground()
+        # move to background
+        elif self.background:
+            self.set_to_foreground()
+
+    # convert open-cv image to Tkinter img
+    def __update_tkimg(self):
+        img = cv2.cvtColor(self.cv2_img, cv2.COLOR_BGR2RGB)
+        pil_img = Image.fromarray(img)
+        self.img = ImageTk.PhotoImage(pil_img)
 
 
 class Advanced_Entry(object):
@@ -308,117 +605,67 @@ class Advanced_Entry(object):
         self.c = color
         self.font = font
 
-        self.object = tk.Entry(self.root, bd=0, bg=self.rgb_to_hex(self.c[0], self.c[1], self.c[2]), font=self.font)
-        self.update = False
+        self.object = tk.Entry(self.root, bd=0, bg=self.rgb_to_hex(self.c), font=self.font)
 
-    # draw entry on the screen
+    # draw entry
     def draw(self):
-        # erase if updated
-        if self.update:
-            self.clear()
-
-        # draw
         if not self.object.winfo_ismapped():
             self.object.place(x=self.x, y=self.y, width=self.w)
 
-    # erase entry from the screen
+    # erase entry
     def clear(self):
         if self.object.winfo_ismapped():
             self.object.place_forget()
 
-    # set new text that should be in the entry
-    def set_text(self, txt: str):
-        self.object.delete("0", "end")
-        self.object.insert("0", txt)
-
-    # reposition the entry on the screen
-    def re_pos(self, x, y):
+    # change position
+    def set_pos(self, x, y):
+        # set class parameters
         self.x = x
         self.y = y
 
+        # update pos
         self.object.place(x=self.x, y=self.y, width=self.w)
 
+    # change width
+    def set_width(self, width):
+        # set class parameter
+        self.w = width
+
+        # change width
+        if self.object.winfo_ismapped():
+            self.object.configure(width=self.w)
+
+    # change color
+    def set_color(self, color: (int, int, int)):
+        # set class parameter
+        self.c = color
+
+        # change color
+        if self.object.winfo_ismapped():
+            self.object.configure(bg=self.rgb_to_hex(self.c))
+
+    # change font
+    def set_font(self, font: Font):
+        # set class parameter
+        self.font = font
+
+        # change font
+        if self.object.winfo_ismapped():
+            self.object.configure(font=font)
+
+    # change text
+    def set_text(self, txt: str):
+        if self.object.winfo_ismapped():
+            self.object.delete("0", "end")
+            self.object.insert("0", txt)
+
+    # return text
+    def get_text(self) -> str:
+        return self.object.get()
+
+    # convert rgb to hex
     @staticmethod
-    def rgb_to_hex(r: int, g: int, b: int):
-        assert all(0 <= color <= 255 for color in (r, g, b)), "all rgb values have to be between 0 and 255"
+    def rgb_to_hex(rgb):
+        assert all(0 <= color <= 255 for color in rgb), "all rgb values have to be between 0 and 255"
 
-        return '#{:02x}{:02x}{:02x}'.format(r, g, b)
-
-
-class Advanced_Image(object):
-    def __init__(self, canvas: tk.Canvas, x: int, y: int, src: str = None):
-        self.canvas = canvas
-        self.x = x
-        self.y = y
-        self.src = src
-
-        self.zoom = 1
-        self.object = None
-        self.update = False
-
-        if src is not None:
-            # load image
-            self.cv2_img = cv2.imread(self.src)
-            self.update_tkimg()
-
-    def draw(self):
-        # update the image if necessary
-        if self.update:
-            self.clear()
-            self.update = False
-
-        # draw if it hasn't been drawn jet
-        if self.object is None and self.src is not None:
-            self.object = self.canvas.create_image(self.x, self.y, image=self.img, anchor=tk.NW)
-
-    # change the Image that should be visualised
-    def change_img(self, path: str):
-        self.src = path
-
-        # open image through open-cv
-        self.cv2_img = cv2.imread(self.src)
-
-        img = cv2.cvtColor(self.cv2_img, cv2.COLOR_BGR2RGB)
-        pil_img = Image.fromarray(img)
-        self.img = ImageTk.PhotoImage(pil_img)
-
-        # update the visualised image
-        if self.object is not None:
-            self.canvas.itemconfigure(self.object, image=self.img)
-
-    # convert open-cv image to Tkinter img
-    def update_tkimg(self):
-        img = cv2.cvtColor(self.cv2_img, cv2.COLOR_BGR2RGB)
-        pil_img = Image.fromarray(img)
-        self.img = ImageTk.PhotoImage(pil_img)
-
-    # change zoom
-    def set_zoom(self, zoom: float):
-        height, width = cv2.imread(self.src).shape[:2]
-
-        if round(width+self.zoom) > 0:
-            # change image size
-            self.cv2_img = cv2.resize(cv2.imread(self.src), (round(width+self.zoom), round(height+(height/width)*self.zoom)))
-            self.update_tkimg()
-
-        # update zoom
-        self.zoom = zoom
-
-        self.canvas.itemconfigure(self.object, image=self.img)
-
-    # erase object from the screen
-    def clear(self):
-        if self.object is not None:
-            self.canvas.delete(self.object)
-            self.object = None
-
-    # reposition the entry on the screen
-    def re_pos(self, x, y):
-        # change position on the screen
-        if self.object is not None:
-            self.canvas.coords(self.object, x, y)
-            self.canvas.tag_raise(self.object, tk.ALL)
-
-        # set class variables
-        self.x = x
-        self.y = y
+        return '#{:02x}{:02x}{:02x}'.format(rgb[0], rgb[1], rgb[2])

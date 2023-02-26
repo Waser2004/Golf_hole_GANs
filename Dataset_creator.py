@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter.font import Font
 from tkinter import filedialog
 
-from Advanced_Canvas import Advanced_Square, Advanced_Text, Advanced_Image
+from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image, Advanced_Circle
 
 
 class GUI(object):
@@ -26,10 +26,15 @@ class GUI(object):
         self.zoom = 1
 
         # initialise canvas objects
-        self.sel_file_but = Advanced_Square(self.canvas, 0, 25, 200, 50, (240, 240, 240), (240, 240, 240), 6)
+        self.Hole_IMG = Advanced_Image(self.canvas, 0, 0)
+
+        self.sel_file_but = Advanced_Rectangle(self.canvas, 0, 25, 200, 50, (240, 240, 240), (240, 240, 240), 6)
         self.sel_file_text = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-75, 0, "Select file", (0, 0, 0), self.F1)
 
-        self.Hole_IMG = Advanced_Image(self.canvas, 0, 0)
+        self.action_but = Advanced_Rectangle(self.canvas, 0, 25, 200, 50, (240, 240, 240), (240, 240, 240), 6)
+        self.action_text = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-75, 0, "Select file", (150, 150, 150), self.F1)
+
+        self.start_point = Advanced_Circle(self.canvas, -5, -5, 5, (255, 255, 255), (255, 255, 255))
 
         # root bind events
         self.root.bind("<Button-1>", self.button_1)
@@ -44,6 +49,11 @@ class GUI(object):
         self.sel_file_but.draw()
         self.sel_file_text.draw()
 
+        self.action_but.draw()
+        self.action_text.draw()
+
+        self.start_point.draw()
+
         self.root.after(27, self.main)
 
     # left click
@@ -53,16 +63,24 @@ class GUI(object):
             file = filedialog.askopenfilename(initialdir="D:\\Golf_course_IMGs")
 
             if file != "":
-                self.Hole_IMG.change_img(file)
-                self.Hole_IMG.re_pos(self.WINDOW_SIZE[0]//2-self.Hole_IMG.img.width()//2, self.WINDOW_SIZE[1]//2-self.Hole_IMG.img.height()//2)
+                self.Hole_IMG.set_img(file)
+                self.Hole_IMG.set_pos(self.WINDOW_SIZE[0] // 2 - self.Hole_IMG.img.width() // 2,
+                                      self.WINDOW_SIZE[1] // 2 - self.Hole_IMG.img.height() // 2)
+
+                self.action_text.set_text("select starting pos")
+                self.action_text.set_color((0, 0, 0))
+
+        elif self.action_text.txt == "select starting pos":
+            self.start_point.set_pos(self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2)
 
     # scroll event
     def scroll(self, event):
         self.zoom += event.delta/12
 
         if self.Hole_IMG.src is not None:
-            self.Hole_IMG.set_zoom(self.zoom)
-            self.Hole_IMG.re_pos(self.WINDOW_SIZE[0]//2-self.Hole_IMG.img.width()//2, self.WINDOW_SIZE[1]//2-self.Hole_IMG.img.height()//2)
+            self.Hole_IMG.set_size(self.zoom)
+            self.Hole_IMG.set_pos(self.WINDOW_SIZE[0] // 2 - self.Hole_IMG.img.width() // 2,
+                                  self.WINDOW_SIZE[1] // 2 - self.Hole_IMG.img.height() // 2)
 
     # configure event
     def configure(self, event):
@@ -73,11 +91,15 @@ class GUI(object):
 
         # update image
         if self.Hole_IMG.src is not None:
-            self.Hole_IMG.re_pos(self.WINDOW_SIZE[0]//2-self.Hole_IMG.img.width()//2, self.WINDOW_SIZE[1]//2-self.Hole_IMG.img.height()//2)
+            self.Hole_IMG.set_pos(self.WINDOW_SIZE[0] // 2 - self.Hole_IMG.img.width() // 2,
+                                  self.WINDOW_SIZE[1] // 2 - self.Hole_IMG.img.height() // 2)
 
         # replace canvas objects
-        self.sel_file_but.re_pos(self.WINDOW_SIZE[0]//2-100, self.sel_file_but.y)
-        self.sel_file_text.re_pos(self.WINDOW_SIZE[0]//2-75, 75-self.F1.measure("linespace")//2)
+        self.sel_file_but.set_pos(self.WINDOW_SIZE[0] // 2 - 210, self.sel_file_but.y)
+        self.sel_file_text.set_pos(self.WINDOW_SIZE[0]//2-185, 75-self.F1.measure("linespace")//2)
+
+        self.action_but.set_pos(self.WINDOW_SIZE[0] // 2 + 10, self.sel_file_but.y)
+        self.action_text.set_pos(self.WINDOW_SIZE[0]//2+35, 75-self.F1.measure("linespace")//2)
 
     # open the window
     def main_loop(self):
