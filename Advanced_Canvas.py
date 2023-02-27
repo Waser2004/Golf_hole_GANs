@@ -495,7 +495,7 @@ class Advanced_Image(object):
         if src is not None:
             # load image
             self.cv2_img = cv2.imread(self.src)
-            self.update_tkimg()
+            self.__update_tkimg()
 
     # draw image
     def draw(self):
