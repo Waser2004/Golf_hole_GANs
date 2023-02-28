@@ -4,7 +4,8 @@ from tkinter import filedialog
 import datetime
 import os
 
-from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image, Advanced_Circle
+from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image
+from Map import Map
 
 
 class GUI(object):
@@ -24,7 +25,12 @@ class GUI(object):
         self.F1 = Font(family="Arial", size=12)
         self.F2 = Font(family="Arial", size=10)
 
+        self.map = Map(self.canvas, self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2)
+
         # other parameters
+        self.last_x = 0
+        self.last_y = 0
+
         self.file_path = None
 
         self.notification = None
@@ -49,6 +55,8 @@ class GUI(object):
 
         # root bind events
         self.root.bind("<Button-1>", self.button_1)
+        self.root.bind("<Motion>", self.motion)
+        self.root.bind("<B1-Motion>", self.b1_motion)
         self.root.bind_class("Tk", "<Configure>", self.configure)
 
     # window loop
@@ -74,6 +82,9 @@ class GUI(object):
             # reset
             self.notification = None
             self.notification_time = None
+
+        # draw map
+        self.map.draw()
 
         self.root.after(27, self.main)
 
@@ -160,6 +171,21 @@ class GUI(object):
         if self.notification is not None:
             self.notification_back.set_pos(self.WINDOW_SIZE[0]//2-self.F2.measure(self.notification)//2-10, 85)
             self.notification_text.set_pos(self.WINDOW_SIZE[0]//2, 97)
+
+        # replace map center
+        self.map.set_center(self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2)
+
+    # track mouse movement
+    def motion(self, event):
+        self.last_x = event.x
+        self.last_y = event.y
+
+    # track mouse movement
+    def b1_motion(self, event):
+        self.map.add_offset(event.x-self.last_x, event.y-self.last_y)
+
+        self.last_x = event.x
+        self.last_y = event.y
 
     # open the window
     def main_loop(self):
