@@ -31,6 +31,18 @@ class Map(object):
         # screen center
         self.screen_center = [self.center[0]+self.x_offset, self.center[1]+self.y_offset]
 
+        # zoom slider
+        self.move_slider = None
+
+        self.zoom_slider_pos = None
+        self.zoom_lin = None
+        self.zoom_but = None
+
+        # origin button
+        self.origin_but_pos = None
+        self.origin_but = None
+        self.origin_img = None
+
         # create origin grid
         self.add_line("X-axis", -50, 0, 50, 0, 1, (150, 150, 150))
         self.add_line("Y-axis", 0, -50, 0, 50, 1, (150, 150, 150))
@@ -70,7 +82,36 @@ class Map(object):
         self.lines_info.update({name: [x1, y1, x2, y2, width]})
         self.lines.update({name: Advanced_Line(self.canvas, self.screen_center[0]+round(x1*self.zoom), self.screen_center[1]+round(y1*self.zoom), self.screen_center[0]+round(x2*self.zoom), self.screen_center[1]+round(y2*self.zoom), 1 if round(width*self.zoom) <= 1 else round(width*self.zoom), color)})
 
-        print(self.lines_info[name])
+    # add a zoom slider
+    def add_zoom_slider(self, x: int, y: int):
+        self.zoom_slider_pos = [x, y]
+
+        self.zoom_lin = Advanced_Line(self.canvas, x, y, x+200, y, 1, (150, 150, 150))
+        self.zoom_but = Advanced_Rectangle(self.canvas, x+round(self.zoom*100)-10 if self.zoom <= 2.1 else x+200, y-8, 5, 16, None, (69, 69, 69), 2)
+
+    def set_zoom_slider_pos(self, x: int, y: int):
+        assert self.zoom_slider_pos is not None, "Zoom slider has not been added jet"
+
+        self.zoom_slider_pos = [x, y]
+
+        self.zoom_lin.set_pos(x, y, x+200, y)
+        self.zoom_but.set_pos(x+round(self.zoom*100)-10 if self.zoom <= 2.1 else x+200, y-8)
+
+    # add origin button
+    def add_origin_button(self, x: int, y: int):
+        self.origin_but_pos = [x, y]
+
+        self.origin_but = Advanced_Rectangle(self.canvas, x, y, 25, 25, None, (240, 240, 240), 2)
+        self.origin_img = Advanced_Image(self.canvas, x+1, y+1, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\origin_icon.png")
+
+    # change origin button pos
+    def set_origin_button_pos(self, x: int, y: int):
+        assert self.origin_but_pos is not None, "Origin button has not been added jet"
+
+        self.origin_but_pos = [x, y]
+
+        self.origin_but.set_pos(x, y)
+        self.origin_img.set_pos(x+1, y+1)
 
     # draw
     def draw(self):
@@ -88,6 +129,14 @@ class Map(object):
 
         for key, value in self.lines.items():
             value.draw()
+
+        if self.origin_but_pos is not None:
+            self.origin_but.draw()
+            self.origin_img.draw()
+
+        if self.zoom_slider_pos is not None:
+            self.zoom_lin.draw()
+            self.zoom_but.draw()
 
     # set to background
     def set_to_background(self):
@@ -129,26 +178,31 @@ class Map(object):
             value.set_pos(value.x1+delta[0], value.y1+delta[1], value.x2+delta[0], value.y2+delta[1])
 
     # add x, y offset
-    def add_offset(self, x: int, y: int):
-        self.x_offset += x
-        self.y_offset += y
+    def add_offset(self, x: int, y: int, event):
+        if self.move_slider is None:
+            self.x_offset += x
+            self.y_offset += y
 
-        self.screen_center = [self.center[0]+self.x_offset, self.center[1]+self.y_offset]
+            self.screen_center = [self.center[0]+self.x_offset, self.center[1]+self.y_offset]
 
-        for key, value in self.rectangles.items():
-            value.set_pos(value.x+x, value.y+y)
+            for key, value in self.rectangles.items():
+                value.set_pos(value.x+x, value.y+y)
 
-        for key, value in self.texts.items():
-            value.set_pos(value.x+x, value.y+y)
+            for key, value in self.texts.items():
+                value.set_pos(value.x+x, value.y+y)
 
-        for key, value in self.images.items():
-            value.set_pos(value.x+x, value.y+y)
+            for key, value in self.images.items():
+                value.set_pos(value.x+x, value.y+y)
 
-        for key, value in self.circles.items():
-            value.set_pos(value.x+x, value.y+y)
+            for key, value in self.circles.items():
+                value.set_pos(value.x+x, value.y+y)
 
-        for key, value in self.lines.items():
-            value.set_pos(value.x1+x, value.y1+y, value.x2+x, value.y2+y)
+            for key, value in self.lines.items():
+                value.set_pos(value.x1+x, value.y1+y, value.x2+x, value.y2+y)
+
+        else:
+            if self.zoom_slider_pos[0] <= event.x <= self.zoom_slider_pos[0]+200:
+                self.add_zoom(x/100)
 
     # change zoom
     def add_zoom(self, zoom: float):
@@ -173,4 +227,19 @@ class Map(object):
             value.set_pos(self.lines_info[key][0]*self.zoom+self.screen_center[0], self.lines_info[key][1]*self.zoom+self.screen_center[1],
                           self.lines_info[key][2]*self.zoom+self.screen_center[0], self.lines_info[key][3]*self.zoom+self.screen_center[1])
             value.set_width(1 if round(self.lines_info[key][4]*self.zoom) <= 1 else round(self.lines_info[key][4]*self.zoom))
+
+        self.zoom_but.set_pos(self.zoom_slider_pos[0]+round(self.zoom*100)-10 if self.zoom <= 2.1 else self.zoom_slider_pos[0]+200, self.zoom_slider_pos[1]-8)
+
+    # left click
+    def button_1(self, event):
+        # origin button
+        if self.origin_but is not None and self.origin_but.is_pressed(event):
+            self.add_offset(-self.x_offset, -self.y_offset, event)
+
+        if self.zoom_but is not None and self.zoom_but.is_pressed(event):
+            self.move_slider = event.x
+
+    # release left click
+    def buttonrelease_1(self, event):
+        self.move_slider = None
 

@@ -26,6 +26,10 @@ class GUI(object):
         self.F2 = Font(family="Arial", size=10)
 
         self.map = Map(self.canvas, self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2)
+
+        self.map.add_origin_button(self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]-125)
+        self.map.add_zoom_slider(self.WINDOW_SIZE[0]//2-100, self.WINDOW_SIZE[1]-113)
+
         self.map.set_to_background()
 
         # other parameters
@@ -56,6 +60,7 @@ class GUI(object):
 
         # root bind events
         self.root.bind("<Button-1>", self.button_1)
+        self.root.bind("<ButtonRelease-1>", self.buttonrelease_1)
         self.root.bind("<Motion>", self.motion)
         self.root.bind("<B1-Motion>", self.b1_motion)
         self.root.bind("<MouseWheel>", self.wheel)
@@ -110,6 +115,8 @@ class GUI(object):
 
     # left click
     def button_1(self, event):
+        self.map.button_1(event)
+
         # select file button
         if self.sel_file_but.is_pressed(event):
             # load Image
@@ -149,6 +156,9 @@ class GUI(object):
             else:
                 self.set_notification("The next step is to select the start point by clicking on the image")
 
+    def buttonrelease_1(self, event):
+        self.map.buttonrelease_1(event)
+
     # configure event
     def configure(self, event):
         self.WINDOW_SIZE = [event.width, event.height]
@@ -177,6 +187,10 @@ class GUI(object):
         # replace map center
         self.map.set_center(self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2)
 
+        # map origin button and zoom slider
+        self.map.set_origin_button_pos(self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]-125)
+        self.map.set_zoom_slider_pos(self.WINDOW_SIZE[0]//2-100, self.WINDOW_SIZE[1]-113)
+
     # track mouse movement
     def motion(self, event):
         self.last_x = event.x
@@ -184,7 +198,7 @@ class GUI(object):
 
     # track mouse movement
     def b1_motion(self, event):
-        self.map.add_offset(event.x-self.last_x, event.y-self.last_y)
+        self.map.add_offset(event.x-self.last_x, event.y-self.last_y, event)
 
         self.last_x = event.x
         self.last_y = event.y

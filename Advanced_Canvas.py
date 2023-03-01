@@ -209,7 +209,6 @@ class Advanced_Line(object):
         # move to background
         elif self.background:
             self.set_to_background(forever=True)
-            print("Hello")
 
     # convert rgb to hex
     @staticmethod
