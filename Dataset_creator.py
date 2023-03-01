@@ -26,6 +26,7 @@ class GUI(object):
         self.F2 = Font(family="Arial", size=10)
 
         self.map = Map(self.canvas, self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2)
+        self.map.set_to_background()
 
         # other parameters
         self.last_x = 0
@@ -57,6 +58,7 @@ class GUI(object):
         self.root.bind("<Button-1>", self.button_1)
         self.root.bind("<Motion>", self.motion)
         self.root.bind("<B1-Motion>", self.b1_motion)
+        self.root.bind("<MouseWheel>", self.wheel)
         self.root.bind_class("Tk", "<Configure>", self.configure)
 
     # window loop
@@ -186,6 +188,10 @@ class GUI(object):
 
         self.last_x = event.x
         self.last_y = event.y
+
+    # track wheel rotation
+    def wheel(self, event):
+        self.map.add_zoom(-event.delta/1200)
 
     # open the window
     def main_loop(self):

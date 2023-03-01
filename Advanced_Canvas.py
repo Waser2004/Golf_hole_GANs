@@ -102,10 +102,10 @@ class Advanced_Circle(object):
     def __update_z_pos(self):
         # move to foreground
         if self.foreground:
-            self.set_to_foreground()
+            self.set_to_foreground(forever=True)
         # move to background
         elif self.background:
-            self.set_to_foreground()
+            self.set_to_background(forever=True)
 
     # convert rgb to hex
     @staticmethod
@@ -205,10 +205,11 @@ class Advanced_Line(object):
     def __update_z_pos(self):
         # move to foreground
         if self.foreground:
-            self.set_to_foreground()
+            self.set_to_foreground(forever=True)
         # move to background
         elif self.background:
-            self.set_to_foreground()
+            self.set_to_background(forever=True)
+            print("Hello")
 
     # convert rgb to hex
     @staticmethod
@@ -332,10 +333,10 @@ class Advanced_Text(object):
     def __update_z_pos(self):
         # move to foreground
         if self.foreground:
-            self.set_to_foreground()
+            self.set_to_foreground(forever=True)
         # move to background
         elif self.background:
-            self.set_to_foreground()
+            self.set_to_background(forever=True)
 
     # convert rgb to hex
     @staticmethod
@@ -467,10 +468,10 @@ class Advanced_Rectangle(object):
     def __update_z_pos(self):
         # move to foreground
         if self.foreground:
-            self.set_to_foreground()
+            self.set_to_foreground(forever=True)
         # move to background
         elif self.background:
-            self.set_to_foreground()
+            self.set_to_background(forever=True)
 
     # convert rgb to hex
     @staticmethod
@@ -583,10 +584,10 @@ class Advanced_Image(object):
     def __update_z_pos(self):
         # move to foreground
         if self.foreground:
-            self.set_to_foreground()
+            self.set_to_foreground(forever=True)
         # move to background
         elif self.background:
-            self.set_to_foreground()
+            self.set_to_background(forever=True)
 
     # convert open-cv image to Tkinter img
     def __update_tkimg(self):

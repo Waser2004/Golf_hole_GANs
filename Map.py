@@ -68,7 +68,9 @@ class Map(object):
         assert name not in self.lines, "Name does already exist in the dictionary choose an other one"
 
         self.lines_info.update({name: [x1, y1, x2, y2, width]})
-        self.lines.update({name: Advanced_Line(self.canvas, self.screen_center[0]+round(x1*self.zoom), self.screen_center[1]+round(y1*self.zoom), self.screen_center[0]+round(x2*self.zoom), self.screen_center[1]+round(y2*self.zoom), round(width*self.zoom), color)})
+        self.lines.update({name: Advanced_Line(self.canvas, self.screen_center[0]+round(x1*self.zoom), self.screen_center[1]+round(y1*self.zoom), self.screen_center[0]+round(x2*self.zoom), self.screen_center[1]+round(y2*self.zoom), 1 if round(width*self.zoom) <= 1 else round(width*self.zoom), color)})
+
+        print(self.lines_info[name])
 
     # draw
     def draw(self):
@@ -86,6 +88,23 @@ class Map(object):
 
         for key, value in self.lines.items():
             value.draw()
+
+    # set to background
+    def set_to_background(self):
+        for key, value in self.rectangles.items():
+            value.set_to_background(forever=True)
+
+        for key, value in self.texts.items():
+            value.set_to_background(forever=True)
+
+        for key, value in self.images.items():
+            value.set_to_background(forever=True)
+
+        for key, value in self.circles.items():
+            value.set_to_background(forever=True)
+
+        for key, value in self.lines.items():
+            value.set_to_background(forever=True)
 
     # set center point
     def set_center(self, x: int, y: int):
@@ -114,6 +133,8 @@ class Map(object):
         self.x_offset += x
         self.y_offset += y
 
+        self.screen_center = [self.center[0]+self.x_offset, self.center[1]+self.y_offset]
+
         for key, value in self.rectangles.items():
             value.set_pos(value.x+x, value.y+y)
 
@@ -128,3 +149,28 @@ class Map(object):
 
         for key, value in self.lines.items():
             value.set_pos(value.x1+x, value.y1+y, value.x2+x, value.y2+y)
+
+    # change zoom
+    def add_zoom(self, zoom: float):
+        if self.zoom+zoom <= 0.1:
+            zoom = 0.1-self.zoom
+
+        self.zoom += zoom
+
+        for key, value in self.rectangles.items():
+            value.set_pos(self.rectangles_info[key][0]*self.zoom+self.screen_center[0], self.rectangles_info[key][1]*self.zoom+self.screen_center[1])
+
+        for key, value in self.texts.items():
+            value.set_pos(self.texts_info[key][0]*self.zoom+self.screen_center[0], self.texts_info[key][1]*self.zoom+self.screen_center[1])
+
+        for key, value in self.images.items():
+            value.set_pos(self.images_info[key][0]*self.zoom+self.screen_center[0], self.images_info[key][1]*self.zoom+self.screen_center[1])
+
+        for key, value in self.circles.items():
+            value.set_pos(self.circles_info[key][0]*self.zoom+self.screen_center[0], self.circles_info[key][1]*self.zoom+self.screen_center[1])
+
+        for key, value in self.lines.items():
+            value.set_pos(self.lines_info[key][0]*self.zoom+self.screen_center[0], self.lines_info[key][1]*self.zoom+self.screen_center[1],
+                          self.lines_info[key][2]*self.zoom+self.screen_center[0], self.lines_info[key][3]*self.zoom+self.screen_center[1])
+            value.set_width(1 if round(self.lines_info[key][4]*self.zoom) <= 1 else round(self.lines_info[key][4]*self.zoom))
+
