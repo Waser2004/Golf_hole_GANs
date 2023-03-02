@@ -24,8 +24,8 @@ class Advanced_Circle(object):
         if self.object is None:
             self.object = self.canvas.create_oval(self.x - self.r, self.y - self.r, self.x + self.r, self.y + self.r, outline=self.rgb_to_hex(self.ol), fill=self.rgb_to_hex(self.c))
 
-            # update z layer pos
-            self.__update_z_pos()
+        # update z layer pos
+        self.__update_z_pos()
 
     # erase circle from the screen
     def clear(self):
@@ -135,8 +135,8 @@ class Advanced_Line(object):
         if self.object is None:
             self.object = self.canvas.create_line(self.x1, self.y1, self.x2, self.y2, fill=self.rgb_to_hex(self.c), width=self.w)
 
-            # update z layer pos
-            self.__update_z_pos()
+        # update z layer pos
+        self.__update_z_pos()
 
     # erase circle from the screen
     def clear(self):
@@ -238,8 +238,8 @@ class Advanced_Text(object):
         if self.object is None:
             self.object = self.canvas.create_text(self.x, self.y, text=self.txt, fill=self.rgb_to_hex(self.c), font=self.font, anchor=self.anchor)
 
-            # update z layer pos
-            self.__update_z_pos()
+        # update z layer pos
+        self.__update_z_pos()
 
     # erase circle from the screen
     def clear(self):
@@ -382,8 +382,8 @@ class Advanced_Rectangle(object):
 
                 self.object = self.canvas.create_polygon(lines_nw, lines_ne, lines_se, lines_sw, outline=self.rgb_to_hex(self.o), fill=self.rgb_to_hex(self.c))
 
-            # update z layer pos
-            self.__update_z_pos()
+        # update z layer pos
+        self.__update_z_pos()
 
     # erase circle from the screen
     def clear(self):
@@ -481,11 +481,12 @@ class Advanced_Rectangle(object):
 
 
 class Advanced_Image(object):
-    def __init__(self, canvas: tk.Canvas, x: int, y: int, src: str = None):
+    def __init__(self, canvas: tk.Canvas, x: int, y: int, src: str = None, anchor: str = "nw"):
         self.canvas = canvas
         self.x = x
         self.y = y
         self.src = src
+        self.anchor = anchor
 
         self.object = None
 
@@ -501,10 +502,10 @@ class Advanced_Image(object):
     def draw(self):
         # draw if it hasn't been drawn jet
         if self.object is None and self.src is not None:
-            self.object = self.canvas.create_image(self.x, self.y, image=self.img, anchor=tk.NW)
+            self.object = self.canvas.create_image(self.x, self.y, image=self.img, anchor=self.anchor)
 
-            # update z layer pos
-            self.__update_z_pos()
+        # update z layer pos
+        self.__update_z_pos()
 
     # erase image
     def clear(self):
@@ -559,7 +560,7 @@ class Advanced_Image(object):
 
     # return size
     def get_size(self) -> (int, int):
-        return cv2.imread(self.src).shape[:2]
+        return cv2.imread(self.src).shape[:2][1], cv2.imread(self.src).shape[:2][0]
 
     # put into foreground
     def set_to_foreground(self, forever: bool = False):

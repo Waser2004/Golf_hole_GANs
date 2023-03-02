@@ -30,11 +30,13 @@ class GUI(object):
         self.map.add_origin_button(self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]-125)
         self.map.add_zoom_slider(self.WINDOW_SIZE[0]//2-100, self.WINDOW_SIZE[1]-113)
 
-        self.map.set_to_background()
+        self.map.set_to_background(forever=True)
 
         # other parameters
         self.last_x = 0
         self.last_y = 0
+        self.click_offset = None
+        self.button_pressed = False
 
         self.file_path = None
 
@@ -53,6 +55,13 @@ class GUI(object):
 
         self.info_but = Advanced_Rectangle(self.canvas, 0, 25, 50, 50, (240, 240, 240), (240, 240, 240), 6)
         self.info_img = Advanced_Image(self.canvas, 0, 50, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\info-button.png")
+
+        # label information
+        self.label_status = "Select Image"
+
+        self.start_point_lab = Advanced_Text(self.canvas, 10, 10, "Starting point:", (50, 50, 50), self.F2)
+        self.end_point_lab = Advanced_Text(self.canvas, 10, 30, "Ending point:", (50, 50, 50), self.F2)
+        self.hole_len_lab = Advanced_Text(self.canvas, 10, 50, "Hole length:", (50, 50, 50), self.F2)
 
         # notification objects
         self.notification_back = Advanced_Rectangle(self.canvas, 0, 100, 50, 24, (60, 60, 60), (60, 60, 60), 2)
@@ -115,7 +124,9 @@ class GUI(object):
 
     # left click
     def button_1(self, event):
-        self.map.button_1(event)
+        self.click_offset = [event.x, event.y]
+
+        self.button_pressed = self.map.button_1(event)
 
         # select file button
         if self.sel_file_but.is_pressed(event):
@@ -135,29 +146,60 @@ class GUI(object):
                 # update text object
                 self.sel_file_text.set_text(txt)
 
+                self.map.add_img("Hole", 0, 0, self.file_path, anchor="center")
+
+                # move on in the line of events
+                self.start_point_lab.draw()
+
+                # set new label status
+                self.label_status = "Select Starting-point"
+
+                self.button_pressed = True
+
         # save button
         elif self.save_but.is_pressed(event):
-            if self.file_path is None:
-                self.set_notification("you have to select a file before you can save anything")
-            else:
+            if self.label_status != "labeling":
                 self.set_notification("The labeling has to be complete to save the file")
+            else:
+                pass  # save as a file
+
+            self.button_pressed = True
 
         # next button
         elif self.next_but.is_pressed(event):
-            if self.file_path is None:
-                self.set_notification("you have to select a file before moving on")
-            else:
+            if self.label_status == "Select Image":
+                self.set_notification("you have to select an image before moving on")
+            elif self.label_status == "Select Starting-point" and self.start_point_lab.txt == "Starting point:":
                 self.set_notification("Set starting Point before moving on")
+
+            self.button_pressed = True
 
         # information button
         elif self.info_but.is_pressed(event):
-            if self.file_path is None:
+            if self.label_status == "Select Image":
                 self.set_notification("The next step is to select an Image by clicking the \"Select Image\" button")
-            else:
+            elif self.label_status == "Select Starting-pint":
                 self.set_notification("The next step is to select the start point by clicking on the image")
+
+            self.button_pressed = True
 
     def buttonrelease_1(self, event):
         self.map.buttonrelease_1(event)
+
+        # check if only click and no movement
+        if [event.x, event.y] == self.click_offset:
+            map_x, map_y = self.map.get_click_pos(event)
+
+            # add/move starting point
+            if self.label_status == "Select Starting-point" and not self.button_pressed:
+                if "Starting Point" not in self.map.circles:
+                    self.map.add_circle("Starting Point", map_x, map_y, 5, None, (255, 255, 255))
+                    self.start_point_lab.set_text(f"Starting point: {round(map_x)}, {round(map_y)}")
+                else:
+                    self.map.set_circle_pos("Starting Point", map_x, map_y)
+                    self.start_point_lab.set_text(f"Starting point: {round(map_x)}, {round(map_y)}")
+
+        self.button_pressed = False
 
     # configure event
     def configure(self, event):
