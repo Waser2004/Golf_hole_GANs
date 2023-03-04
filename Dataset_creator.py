@@ -4,7 +4,7 @@ from tkinter import filedialog
 import datetime
 import os
 
-from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image
+from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image, Advanced_Entry, Advanced_Line
 from Map import Map
 
 
@@ -22,8 +22,8 @@ class GUI(object):
         self.canvas.place(x=-2, y=-2)
 
         # fonts
-        self.F1 = Font(family="Arial", size=12)
-        self.F2 = Font(family="Arial", size=10)
+        self.F1 = Font(family="Arial", size=12)  # linespace: 18
+        self.F2 = Font(family="Arial", size=10)  # linespace: 16
 
         self.map = Map(self.canvas, self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2)
 
@@ -59,9 +59,25 @@ class GUI(object):
         # label information
         self.label_status = "Select Image"
 
+        # date
+        self.start_point_pos = None
+        self.end_point_pos = None
+        self.distance = None
+
+        # info
         self.start_point_lab = Advanced_Text(self.canvas, 10, 10, "Starting point:", (50, 50, 50), self.F2)
         self.end_point_lab = Advanced_Text(self.canvas, 10, 30, "Ending point:", (50, 50, 50), self.F2)
         self.hole_len_lab = Advanced_Text(self.canvas, 10, 50, "Hole length:", (50, 50, 50), self.F2)
+
+        # length definition components
+        self.len_set_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-200, self.WINDOW_SIZE[1]//2-100, 400, 200, None, (240, 240, 240), 6)
+        self.len_set_tit = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2-50, "type in the length of the hole:", (0, 0, 0), self.F1, "center")
+        self.len_set_entry = Advanced_Entry(self.root, self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]//2-11, 290-self.F1.measure("m"), (240, 240, 240), self.F1)
+        self.len_set_under = Advanced_Line(self.canvas, self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]//2+11, self.WINDOW_SIZE[0]//2+150, self.WINDOW_SIZE[1]//2+11, 1, (0, 0, 0))
+        self.len_set_unit = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+150-self.F1.measure("m"), self.WINDOW_SIZE[1]//2+10, "m", (0, 0, 0), self.F1, "sw")
+        self.len_set_info_1 = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-128, self.WINDOW_SIZE[1]//2+42, "click the", (0, 0, 0), self.F2)
+        self.len_set_info_2 = Advanced_Image(self.canvas, self.WINDOW_SIZE[0]//2-64, self.WINDOW_SIZE[1]//2+50, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\right-arrow.png", "center")
+        self.len_set_info_3 = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+128, self.WINDOW_SIZE[1]//2+42, "button or press \"n\" to continue", (0, 0, 0), self.F2, "ne")
 
         # notification objects
         self.notification_back = Advanced_Rectangle(self.canvas, 0, 100, 50, 24, (60, 60, 60), (60, 60, 60), 2)
@@ -167,20 +183,88 @@ class GUI(object):
 
         # next button
         elif self.next_but.is_pressed(event):
+            # image has not been selected
             if self.label_status == "Select Image":
                 self.set_notification("you have to select an image before moving on")
+            # starting point has not been selected
             elif self.label_status == "Select Starting-point" and self.start_point_lab.txt == "Starting point:":
                 self.set_notification("Set starting Point before moving on")
+            # moving on to ending point selection
+            elif self.label_status == "Select Starting-point":
+                self.label_status = "Select Ending-point"
+                self.map.circles["Starting Point"].set_color((200, 200, 200))
+                self.end_point_lab.draw()
+            # ending point has not been selected
+            elif self.label_status == "Select Ending-point" and self.end_point_lab.txt == "Ending point:":
+                self.set_notification("Set ending Point before moving on")
+            # moving on to defining length
+            elif self.label_status == "Select Ending-point":
+                self.label_status = "Select Length"
+                self.map.circles["Ending Point"].set_color((200, 200, 200))
+                self.hole_len_lab.draw()
+                # draw len popup
+                self.len_set_back.draw()
+                self.len_set_tit.draw()
+                self.len_set_entry.draw()
+                self.len_set_under.draw()
+                self.len_set_unit.draw()
+                self.len_set_info_1.draw()
+                self.len_set_info_2.draw()
+                self.len_set_info_3.draw()
+            # moving on to labeling image
+            elif self.label_status == "Select Length":
+                self.distance = self.len_set_entry.get_text()
+                # no input
+                if self.distance.strip(" ") == "":
+                    self.set_notification("Please set a distance value before moving on")
+                # good input
+                try:
+                    self.distance = int(self.distance.strip(" "))
+                    
+                    self.hole_len_lab.set_text(f"Hole length: {self.distance}")
+                    # clean len popup
+                    self.len_set_back.clear()
+                    self.len_set_tit.clear()
+                    self.len_set_entry.clear()
+                    self.len_set_under.clear()
+                    self.len_set_unit.clear()
+                    self.len_set_info_1.clear()
+                    self.len_set_info_2.clear()
+                    self.len_set_info_3.clear()
+
+                    self.label_status = "labeling"
+                    self.save_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\save_icon.png")
+                # input is not an int
+                except ValueError:
+                    self.set_notification("The input for the length has to be transformable to an int")
+            # labeling
+            else:
+                self.set_notification("You have completed all tasks and are now labeling. if your done with labeling press the save button to save it.")
 
             self.button_pressed = True
 
         # information button
         elif self.info_but.is_pressed(event):
+            # next step select image
             if self.label_status == "Select Image":
                 self.set_notification("The next step is to select an Image by clicking the \"Select Image\" button")
+            # next step select starting point
             elif self.label_status == "Select Starting-pint":
                 self.set_notification("The next step is to select the start point by clicking on the image")
+            # next step select ending point
+            elif self.label_status == "Select Ending-point":
+                self.set_notification("The next step is to select the ending point by clicking on the image")
+            # next step define length
+            elif self.label_status == "Select Length":
+                self.set_notification("The next step is to define the length by typing it in to the entry in the popup")
+            # next step labeling the image
+            elif self.label_status == "labeling":
+                self.set_notification("The next step is to label the image by clicking on the screen")
 
+            self.button_pressed = True
+
+        # len set label clicked
+        if self.len_set_back.is_pressed(event) and self.len_set_back.object is not None:
             self.button_pressed = True
 
     def buttonrelease_1(self, event):
@@ -195,9 +279,26 @@ class GUI(object):
                 if "Starting Point" not in self.map.circles:
                     self.map.add_circle("Starting Point", map_x, map_y, 5, None, (255, 255, 255))
                     self.start_point_lab.set_text(f"Starting point: {round(map_x)}, {round(map_y)}")
+
+                    self.start_point_pos = [round(map_x), round(map_y)]
                 else:
                     self.map.set_circle_pos("Starting Point", map_x, map_y)
                     self.start_point_lab.set_text(f"Starting point: {round(map_x)}, {round(map_y)}")
+
+                    self.start_point_pos = [round(map_x), round(map_y)]
+
+            # add/move ending point
+            if self.label_status == "Select Ending-point" and not self.button_pressed:
+                if "Ending Point" not in self.map.circles:
+                    self.map.add_circle("Ending Point", map_x, map_y, 5, None, (255, 255, 255))
+                    self.end_point_lab.set_text(f"Ending point: {round(map_x)}, {round(map_y)}")
+
+                    self.end_point_pos = [round(map_x), round(map_y)]
+                else:
+                    self.map.set_circle_pos("Ending Point", map_x, map_y)
+                    self.end_point_lab.set_text(f"Ending point: {round(map_x)}, {round(map_y)}")
+
+                    self.end_point_pos = [round(map_x), round(map_y)]
 
         self.button_pressed = False
 
@@ -208,7 +309,7 @@ class GUI(object):
         # resize canvas
         self.canvas.configure(width=self.WINDOW_SIZE[0], height=self.WINDOW_SIZE[1])
 
-        # replace canvas objects
+        # re place canvas objects
         self.sel_file_but.set_pos(self.WINDOW_SIZE[0]//2-150, self.sel_file_but.y)
         self.sel_file_text.set_pos(self.WINDOW_SIZE[0]//2-135, 75-self.F1.measure("linespace")//2)
 
@@ -221,12 +322,22 @@ class GUI(object):
         self.info_but.set_pos(self.WINDOW_SIZE[0]-75, self.WINDOW_SIZE[1]-75)
         self.info_img.set_pos(self.WINDOW_SIZE[0]-50-self.next_img.get_size()[0]//2, self.WINDOW_SIZE[1]-50-self.next_img.get_size()[1]//2)
 
-        # replace notification objects
+        # re place notification objects
         if self.notification is not None:
             self.notification_back.set_pos(self.WINDOW_SIZE[0]//2-self.F2.measure(self.notification)//2-10, 85)
             self.notification_text.set_pos(self.WINDOW_SIZE[0]//2, 97)
 
-        # replace map center
+        # re place label components
+        self.len_set_back.set_pos(self.WINDOW_SIZE[0] // 2 - 200, self.WINDOW_SIZE[1] // 2 - 100, False if self.len_set_back.object is None else True)
+        self.len_set_tit.set_pos(self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2-50)
+        self.len_set_entry.set_pos(self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]//2-11)
+        self.len_set_under.set_pos(self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]//2+11, self.WINDOW_SIZE[0]//2+150, self.WINDOW_SIZE[1]//2+11)
+        self.len_set_unit.set_pos(self.WINDOW_SIZE[0]//2+150-self.F1.measure("m"), self.WINDOW_SIZE[1]//2+10)
+        self.len_set_info_1.set_pos(self.WINDOW_SIZE[0]//2-128, self.WINDOW_SIZE[1]//2+42)
+        self.len_set_info_2.set_pos(self.WINDOW_SIZE[0]//2-64, self.WINDOW_SIZE[1]//2+50)
+        self.len_set_info_3.set_pos(self.WINDOW_SIZE[0]//2+128, self.WINDOW_SIZE[1]//2+42)
+
+        # re place map center
         self.map.set_center(self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2)
 
         # map origin button and zoom slider

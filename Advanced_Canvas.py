@@ -619,16 +619,17 @@ class Advanced_Entry(object):
             self.object.place_forget()
 
     # change position
-    def set_pos(self, x, y):
+    def set_pos(self, x: int, y: int):
         # set class parameters
         self.x = x
         self.y = y
 
         # update pos
-        self.object.place(x=self.x, y=self.y, width=self.w)
+        if self.object.winfo_ismapped():
+            self.object.place(x=self.x, y=self.y, width=self.w)
 
     # change width
-    def set_width(self, width):
+    def set_width(self, width: int):
         # set class parameter
         self.w = width
 
