@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter.font import Font
 
-from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image, Advanced_Circle, Advanced_Line
+from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Circle, Advanced_Line, Advanced_Image
+from Special_IMG import Special_Image
 
 
 class Map(object):
@@ -70,14 +71,14 @@ class Map(object):
         self.texts.update({name: Advanced_Text(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), text, color, self.font if font is None else font)})
 
         self.order.update({f"T:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
-        elf.sort_order()
+        self.sort_order()
 
     # add a image element
     def add_img(self, name: str, x: int, y: int, source: str = None, anchor: str = "nw"):
         assert name not in self.images, "Name does already exist in the dictionary choose an other one"
 
         self.images_info.update({name: [x, y]})
-        self.images.update({name: Advanced_Image(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), source, anchor=anchor)})
+        self.images.update({name: Special_Image(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), source, anchor=anchor)})
 
         self.order.update({f"I:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
         self.sort_order()
@@ -93,10 +94,10 @@ class Map(object):
         self.sort_order()
 
     # add line element
-    def add_line(self, name: str, x1: int, y1: int, x2: int, y2: int, width: int, color: (int, int, int) = (0, 0, 0)):
+    def add_line(self, name: str, x1: int, y1: int, x2: int, y2: int, width: int, color: (int, int, int) = (0, 0, 0), width_lock: bool = False):
         assert name not in self.lines, "Name does already exist in the dictionary choose an other one"
 
-        self.lines_info.update({name: [x1, y1, x2, y2, width]})
+        self.lines_info.update({name: [x1, y1, x2, y2, width, width_lock]})
         self.lines.update({name: Advanced_Line(self.canvas, self.screen_center[0]+round(x1*self.zoom), self.screen_center[1]+round(y1*self.zoom), self.screen_center[0]+round(x2*self.zoom), self.screen_center[1]+round(y2*self.zoom), 1 if round(width*self.zoom) <= 1 else round(width*self.zoom), color)})
 
         self.order.update({f"L:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
@@ -236,6 +237,14 @@ class Map(object):
         self.order[f"L:{name}"] = z
 
         self.sort_order()
+
+    # lock line width
+    def lock_line_width(self, name: str):
+        self.lines_info[name][5] = True
+
+    # unlock line width
+    def unlock_line_width(self, name: str):
+        self.lines_info[name][5] = False
 
     # sort order according to z value
     def sort_order(self):
@@ -477,7 +486,10 @@ class Map(object):
                 value = self.lines[key[2:]]
                 value.set_pos(self.lines_info[key[2:]][0]*self.zoom+self.screen_center[0], self.lines_info[key[2:]][1]*self.zoom+self.screen_center[1],
                               self.lines_info[key[2:]][2]*self.zoom+self.screen_center[0], self.lines_info[key[2:]][3]*self.zoom+self.screen_center[1])
-                value.set_width(1 if round(self.lines_info[key[2:]][4]*self.zoom) <= 1 else round(self.lines_info[key[2:]][4]*self.zoom))
+                if not self.lines_info[key[2:]][5]:
+                    value.set_width(1 if round(self.lines_info[key[2:]][4]*self.zoom) <= 1 else round(self.lines_info[key[2:]][4]*self.zoom))
+                else:
+                    value.set_width(self.lines_info[key[2:]][4])
 
         self.zoom_but.set_pos(self.zoom_slider_pos[0]+round(self.zoom*100)-10 if self.zoom <= 2.1 else self.zoom_slider_pos[0]+200, self.zoom_slider_pos[1]-8)
 
