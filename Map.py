@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter.font import Font
 
 from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Circle, Advanced_Line, Advanced_Image
-from Special_IMG import Special_Image
 
 
 class Map(object):
@@ -78,7 +77,7 @@ class Map(object):
         assert name not in self.images, "Name does already exist in the dictionary choose an other one"
 
         self.images_info.update({name: [x, y]})
-        self.images.update({name: Special_Image(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), source, anchor=anchor)})
+        self.images.update({name: Advanced_Image(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), source, anchor=anchor)})
 
         self.order.update({f"I:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
         self.sort_order()
@@ -237,6 +236,26 @@ class Map(object):
         self.order[f"L:{name}"] = z
 
         self.sort_order()
+
+    # check if circle with name exists
+    def rectangle_exists(self, name: str) -> bool:
+        return name in self.rectangles
+
+    # check if circle with name exists
+    def text_exists(self, name: str) -> bool:
+        return name in self.texts
+
+    # check if circle with name exists
+    def img_exists(self, name: str) -> bool:
+        return name in self.images
+
+    # check if circle with name exists
+    def circle_exists(self, name: str) -> bool:
+        return name in self.circles
+
+    # check if circle with name exists
+    def line_exists(self, name: str) -> bool:
+        return name in self.lines
 
     # lock line width
     def lock_line_width(self, name: str):
@@ -401,8 +420,8 @@ class Map(object):
                 self.lines[key[2:]].set_pos(value.x1+delta[0], value.y1+delta[1], value.x2+delta[0], value.y2+delta[1])
 
     # add x, y offset
-    def add_offset(self, x: int, y: int, event):
-        if not self.move_slider:
+    def add_offset(self, x: int, y: int, event = None, key: str = "b1") -> bool:
+        if not self.move_slider and key == "b2":
             self.x_offset += x
             self.y_offset += y
 
@@ -436,16 +455,25 @@ class Map(object):
                     value = self.lines[key[2:]]
                     self.lines[key[2:]].set_pos(value.x1+x, value.y1+y, value.x2+x, value.y2+y)
 
-        else:
+            return True
+
+        # move slider
+        elif self.move_slider and event is not None:
             event.x -= 3
 
+            # calculate new zoom
             new_zoom = (event.x-self.zoom_slider_pos[0])/100+0.1
             if event.x <= self.zoom_slider_pos[0]:
                 new_zoom = 0.1
             elif event.x >= self.zoom_slider_pos[0]+200:
                 new_zoom = 2.1
 
+            # apply new zoom
             self.add_zoom(new_zoom-self.zoom)
+
+            return True
+
+        return False
 
     # change zoom
     def add_zoom(self, zoom: float):
@@ -466,7 +494,7 @@ class Map(object):
                 value = self.rectangles[key[2:]]
                 value.set_pos(self.rectangles_info[key[2:]][0]*self.zoom+self.screen_center[0], self.rectangles_info[key[2:]][1]*self.zoom+self.screen_center[1])
                 value.set_size(self.rectangles_info[key[2:]][2]*self.zoom, self.rectangles_info[key[2:]][3]*self.zoom)
-                value.set_radius(self.rectangles_info[key[2:]][3]*self.zoom if self.rectangles_info[key[2:]][3]*self.zoom > 1 else 1)
+                value.set_corner_radius(round(self.rectangles_info[key[2:]][4]*self.zoom) if self.rectangles_info[key[2:]][4]*self.zoom > 1 else 0)
 
             elif key[0] == "T":
                 value = self.texts[key[2:]]
@@ -501,7 +529,8 @@ class Map(object):
     def button_1(self, event):
         # origin button
         if self.origin_but is not None and self.origin_but.is_pressed(event):
-            self.add_offset(-self.x_offset, -self.y_offset, event)
+            print("okay")
+            self.add_offset(-self.x_offset, -self.y_offset, event, "b2")
             return True
 
         # zoom slider

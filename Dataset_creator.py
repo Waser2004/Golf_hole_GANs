@@ -122,7 +122,9 @@ class GUI(object):
         self.root.bind("<ButtonRelease-1>", self.buttonrelease_1)
         self.root.bind("<Motion>", self.motion)
         self.root.bind("<B1-Motion>", self.b1_motion)
+        self.root.bind("<B2-Motion>", self.b2_motion)
         self.root.bind("<MouseWheel>", self.wheel)
+        self.root.bind("<Key>", self.key)
         self.root.bind_class("Tk", "<Configure>", self.configure)
 
     # window loop
@@ -196,7 +198,7 @@ class GUI(object):
         self.notification_time = datetime.datetime.now()
 
     # prepare everything for labeling
-    def prep_labeling(self, event):
+    def prep_labeling(self):
         
         self.start_point_pos = [self.start_point_pos[0], self.start_point_pos[1]]
         self.end_point_pos = [self.end_point_pos[0], self.end_point_pos[1]]
@@ -208,16 +210,13 @@ class GUI(object):
         self.end_point_lab.set_text(f"Ending point: {round(self.end_point_pos[0])}, {round(self.end_point_pos[1])}")
         
         # center map
-        self.map.add_offset(-self.map.x_offset, -self.map.y_offset, event)
+        self.map.add_offset(-self.map.x_offset, -self.map.y_offset)
         self.map.add_zoom(1-self.map.zoom)
 
         # get parameters for new image
         self.ratio = self.distance/sqrt((self.start_point_pos[0]-self.end_point_pos[0])**2+(self.start_point_pos[1]-self.end_point_pos[1])**2)
         self.new_img_width = round(201/self.ratio)
         self.new_img_height = round(600/self.ratio)
-
-        overlay = Image.new("RGBA", (self.new_img_width, self.new_img_height), (0, 0, 0, 0))
-        self.map.images["Hole"].add_overlay(overlay)
 
         box_size = 3
         for i in range(round(201/box_size)+1):
@@ -237,6 +236,71 @@ class GUI(object):
         self.label_water.set_color(self.label_water.c)
         self.label_out.set_color(self.label_out.c)
         self.label_path.set_color(self.label_path.c)
+
+    # next button
+    def next_button_press(self):
+        # image has not been selected
+        if self.label_status == "Select Image":
+            self.set_notification("you have to select an image before moving on")
+        # starting point has not been selected
+        elif self.label_status == "Select Starting-point" and self.start_point_lab.txt == "Starting point:":
+            self.set_notification("Set starting Point before moving on")
+        # moving on to ending point selection
+        elif self.label_status == "Select Starting-point":
+            self.label_status = "Select Ending-point"
+            self.map.circles["Starting Point"].set_color((200, 200, 200))
+            self.end_point_lab.draw()
+        # ending point has not been selected
+        elif self.label_status == "Select Ending-point" and self.end_point_lab.txt == "Ending point:":
+            self.set_notification("Set ending Point before moving on")
+        # moving on to defining length
+        elif self.label_status == "Select Ending-point":
+            self.label_status = "Select Length"
+            self.map.circles["Ending Point"].set_color((200, 200, 200))
+            self.hole_len_lab.draw()
+            # draw len popup
+            self.len_set_back.draw()
+            self.len_set_tit.draw()
+            self.len_set_entry.draw()
+            self.len_set_under.draw()
+            self.len_set_unit.draw()
+            self.len_set_info_1.draw()
+            self.len_set_info_2.draw()
+            self.len_set_info_3.draw()
+        # moving on to labeling image
+        elif self.label_status == "Select Length":
+            self.distance = self.len_set_entry.get_text()
+            # no input
+            if self.distance.strip(" ") == "":
+                self.set_notification("Please set a distance value before moving on")
+            # good input
+            try:
+                self.distance = int(self.distance.strip(" "))
+
+                self.hole_len_lab.set_text(f"Hole length: {self.distance}")
+                # clean len popup
+                self.len_set_back.clear()
+                self.len_set_tit.clear()
+                self.len_set_entry.clear()
+                self.len_set_under.clear()
+                self.len_set_unit.clear()
+                self.len_set_info_1.clear()
+                self.len_set_info_2.clear()
+                self.len_set_info_3.clear()
+
+                self.prep_labeling()
+
+                self.label_status = "labeling"
+                self.save_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\save_icon.png")
+            # input is not an int
+            except ValueError:
+                self.set_notification("The input for the length has to be transformable to an int")
+        # labeling
+        else:
+            self.set_notification(
+                "You have completed all tasks and are now labeling. if your done with labeling press the save button to save it.")
+
+        self.button_pressed = True
 
     # left click
     def button_1(self, event):
@@ -283,67 +347,7 @@ class GUI(object):
 
         # next button
         elif self.next_but.is_pressed(event):
-            # image has not been selected
-            if self.label_status == "Select Image":
-                self.set_notification("you have to select an image before moving on")
-            # starting point has not been selected
-            elif self.label_status == "Select Starting-point" and self.start_point_lab.txt == "Starting point:":
-                self.set_notification("Set starting Point before moving on")
-            # moving on to ending point selection
-            elif self.label_status == "Select Starting-point":
-                self.label_status = "Select Ending-point"
-                self.map.circles["Starting Point"].set_color((200, 200, 200))
-                self.end_point_lab.draw()
-            # ending point has not been selected
-            elif self.label_status == "Select Ending-point" and self.end_point_lab.txt == "Ending point:":
-                self.set_notification("Set ending Point before moving on")
-            # moving on to defining length
-            elif self.label_status == "Select Ending-point":
-                self.label_status = "Select Length"
-                self.map.circles["Ending Point"].set_color((200, 200, 200))
-                self.hole_len_lab.draw()
-                # draw len popup
-                self.len_set_back.draw()
-                self.len_set_tit.draw()
-                self.len_set_entry.draw()
-                self.len_set_under.draw()
-                self.len_set_unit.draw()
-                self.len_set_info_1.draw()
-                self.len_set_info_2.draw()
-                self.len_set_info_3.draw()
-            # moving on to labeling image
-            elif self.label_status == "Select Length":
-                self.distance = self.len_set_entry.get_text()
-                # no input
-                if self.distance.strip(" ") == "":
-                    self.set_notification("Please set a distance value before moving on")
-                # good input
-                try:
-                    self.distance = int(self.distance.strip(" "))
-                    
-                    self.hole_len_lab.set_text(f"Hole length: {self.distance}")
-                    # clean len popup
-                    self.len_set_back.clear()
-                    self.len_set_tit.clear()
-                    self.len_set_entry.clear()
-                    self.len_set_under.clear()
-                    self.len_set_unit.clear()
-                    self.len_set_info_1.clear()
-                    self.len_set_info_2.clear()
-                    self.len_set_info_3.clear()
-
-                    self.prep_labeling(event)
-
-                    self.label_status = "labeling"
-                    self.save_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\save_icon.png")
-                # input is not an int
-                except ValueError:
-                    self.set_notification("The input for the length has to be transformable to an int")
-            # labeling
-            else:
-                self.set_notification("You have completed all tasks and are now labeling. if your done with labeling press the save button to save it.")
-
-            self.button_pressed = True
+            self.next_button_press()
 
         # information button
         elif self.info_but.is_pressed(event):
@@ -458,7 +462,7 @@ class GUI(object):
                     self.end_point_pos = [round(map_x), round(map_y)]
 
             # labeling image
-            elif self.label_status == "labeling":
+            elif self.label_status == "labeling" and not self.button_pressed:
                 if self.label_tool is None:
                     self.set_notification("Please select a labeling tool to continue")
 
@@ -466,7 +470,12 @@ class GUI(object):
                     x_index = floor((self.map.get_click_pos(event)[0]+self.new_img_width//2)*self.ratio/3)
                     y_index = floor((self.map.get_click_pos(event)[1]+self.new_img_height//2)*self.ratio/3)
 
-                    self.map.images["Hole"].draw_overlay(ceil((x_index*3)/self.ratio), ceil((y_index*3)/self.ratio), floor(3/self.ratio), floor(3/self.ratio), self.colors[self.label_tool])
+                    if self.map.rectangle_exists(f"{x_index}x{y_index}"):
+                        if self.map.rectangles[f"{x_index}x{y_index}"].c != self.colors[self.label_tool]:
+                            self.map.rectangles[f"{x_index}x{y_index}"].set_color(self.colors[self.label_tool])
+
+                    else:
+                        self.map.add_rectangle(f"{x_index}x{y_index}", -self.new_img_width//2+(x_index*3/self.ratio), -self.new_img_height//2+(y_index*3/self.ratio), round(3/self.ratio), round(3/self.ratio), None, self.colors[self.label_tool], 0)
 
         self.button_pressed = False
 
@@ -540,9 +549,29 @@ class GUI(object):
         self.last_x = event.x
         self.last_y = event.y
 
+    # track mouse movement while mousewheel is pressed
+    def b2_motion(self, event):
+        self.map.add_offset(event.x - self.last_x, event.y - self.last_y, event, "b2")
+
+        self.last_x = event.x
+        self.last_y = event.y
+
     # track mouse movement
     def b1_motion(self, event):
-        self.map.add_offset(event.x-self.last_x, event.y-self.last_y, event)
+        slider = self.map.add_offset(event.x-self.last_x, event.y-self.last_y, event, "b1")
+
+        if not slider and not self.button_pressed and self.label_status == "labeling":
+            x_index = floor((self.map.get_click_pos(event)[0] + self.new_img_width // 2) * self.ratio / 3)
+            y_index = floor((self.map.get_click_pos(event)[1] + self.new_img_height // 2) * self.ratio / 3)
+
+            if self.map.rectangle_exists(f"{x_index}x{y_index}"):
+                print(self.map.rectangles[f"{x_index}x{y_index}"].c, self.colors[self.label_tool])
+                if self.map.rectangles[f"{x_index}x{y_index}"].c != self.colors[self.label_tool]:
+                    self.map.rectangles[f"{x_index}x{y_index}"].set_color(self.colors[self.label_tool])
+
+            else:
+                self.map.add_rectangle(f"{x_index}x{y_index}", -self.new_img_width // 2 + (x_index * 3 / self.ratio), -self.new_img_height // 2 + (y_index * 3 / self.ratio), round(3 / self.ratio),round(3 / self.ratio), None, self.colors[self.label_tool], 0)
+
 
         self.last_x = event.x
         self.last_y = event.y
@@ -554,6 +583,11 @@ class GUI(object):
     # open the window
     def main_loop(self):
         self.root.mainloop()
+
+    # key event
+    def key(self, event):
+        if event.char == "n":
+            self.next_button_press()
 
 
 if __name__ == '__main__':
