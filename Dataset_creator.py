@@ -72,20 +72,10 @@ class GUI(object):
         self.end_point_lab = Advanced_Text(self.canvas, 10, 30, "Ending point:", (50, 50, 50), self.F2)
         self.hole_len_lab = Advanced_Text(self.canvas, 10, 50, "Hole length:", (50, 50, 50), self.F2)
 
-        # length definition components
-        self.len_set_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-200, self.WINDOW_SIZE[1]//2-100, 400, 200, None, (240, 240, 240), 6)
-        self.len_set_tit = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2-50, "type in the length of the hole:", (0, 0, 0), self.F1, "center")
-        self.len_set_entry = Advanced_Entry(self.root, self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]//2-11, 290-self.F1.measure("m"), (240, 240, 240), self.F1)
-        self.len_set_under = Advanced_Line(self.canvas, self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]//2+11, self.WINDOW_SIZE[0]//2+150, self.WINDOW_SIZE[1]//2+11, 1, (0, 0, 0))
-        self.len_set_unit = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+150-self.F1.measure("m"), self.WINDOW_SIZE[1]//2+10, "m", (0, 0, 0), self.F1, "sw")
-        self.len_set_info_1 = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-128, self.WINDOW_SIZE[1]//2+42, "click the", (0, 0, 0), self.F2)
-        self.len_set_info_2 = Advanced_Image(self.canvas, self.WINDOW_SIZE[0]//2-64, self.WINDOW_SIZE[1]//2+50, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\right-arrow.png", "center")
-        self.len_set_info_3 = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+128, self.WINDOW_SIZE[1]//2+42, "button or press \"n\" to continue", (0, 0, 0), self.F2, "ne")
-
         # label parameters
         self.ratio = None
-        self.new_img_width =  None
-        self.new_img_height =  None
+        self.new_img_width = None
+        self.new_img_height = None
 
         self.label_tool = None
         self.colors = [(25, 250, 100), (25, 200, 50), (25, 200, 25), (25, 150, 25), (25, 100, 25), (240, 240, 25), (25, 50, 25), (100, 100, 255), (255, 255, 255), (110, 110, 110)]
@@ -113,6 +103,9 @@ class GUI(object):
         self.label_path = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0] // 2 + 205, self.WINDOW_SIZE[1] // 2 - 70, 40, 40, None, self.colors[9], 2)
         self.label_path_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0] // 2 + 25, self.WINDOW_SIZE[1] // 2 - 50, "path", (255, 255, 255), self.F3, "center")
 
+        # shift
+        self.shift = 0
+
         # notification objects
         self.notification_back = Advanced_Rectangle(self.canvas, 0, 100, 50, 24, (60, 60, 60), (60, 60, 60), 2)
         self.notification_text = Advanced_Text(self.canvas, 0, 88, "", (200, 200, 200), self.F2, anchor=tk.CENTER)
@@ -125,6 +118,8 @@ class GUI(object):
         self.root.bind("<B2-Motion>", self.b2_motion)
         self.root.bind("<MouseWheel>", self.wheel)
         self.root.bind("<Key>", self.key)
+        self.root.bind("<Left>", self.left)
+        self.root.bind("<Right>", self.right)
         self.root.bind_class("Tk", "<Configure>", self.configure)
 
     # window loop
@@ -237,6 +232,18 @@ class GUI(object):
         self.label_out.set_color(self.label_out.c)
         self.label_path.set_color(self.label_path.c)
 
+    # shift
+    def add_shift(self, dir: str, dis: int = 10):
+        self.shift = self.shift+dis if dir == "right" else self.shift-dis
+        delta = dis if dir == "right" else -dis
+
+        for i in range(round(201/3)+1):
+            pos = self.map.lines_info[f"vert: {i}"]
+            self.map.set_line_pos(f"vert: {i}", pos[0]+delta, pos[1], pos[2]+delta, pos[3])
+        for i in range(round(600/3)+1):
+            pos = self.map.lines_info[f"hor: {i}"]
+            self.map.set_line_pos(f"hor: {i}", pos[0]+delta, pos[1], pos[2]+delta, pos[3])
+
     # next button
     def next_button_press(self):
         # image has not been selected
@@ -255,46 +262,20 @@ class GUI(object):
             self.set_notification("Set ending Point before moving on")
         # moving on to defining length
         elif self.label_status == "Select Ending-point":
-            self.label_status = "Select Length"
+            # draw starting point
             self.map.circles["Ending Point"].set_color((200, 200, 200))
+
+            # apply length
+            self.distance = int(os.path.basename(self.file_path).split("-")[1])
+            self.hole_len_lab.set_text(f"Hole length: {self.distance}")
             self.hole_len_lab.draw()
-            # draw len popup
-            self.len_set_back.draw()
-            self.len_set_tit.draw()
-            self.len_set_entry.draw()
-            self.len_set_under.draw()
-            self.len_set_unit.draw()
-            self.len_set_info_1.draw()
-            self.len_set_info_2.draw()
-            self.len_set_info_3.draw()
-        # moving on to labeling image
-        elif self.label_status == "Select Length":
-            self.distance = self.len_set_entry.get_text()
-            # no input
-            if self.distance.strip(" ") == "":
-                self.set_notification("Please set a distance value before moving on")
-            # good input
-            try:
-                self.distance = int(self.distance.strip(" "))
 
-                self.hole_len_lab.set_text(f"Hole length: {self.distance}")
-                # clean len popup
-                self.len_set_back.clear()
-                self.len_set_tit.clear()
-                self.len_set_entry.clear()
-                self.len_set_under.clear()
-                self.len_set_unit.clear()
-                self.len_set_info_1.clear()
-                self.len_set_info_2.clear()
-                self.len_set_info_3.clear()
-
-                self.prep_labeling()
-
-                self.label_status = "labeling"
-                self.save_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\save_icon.png")
-            # input is not an int
-            except ValueError:
-                self.set_notification("The input for the length has to be transformable to an int")
+            # move on to labeling
+            self.prep_labeling()
+            self.label_status = "shift"
+        # moving on to seth shift
+        elif self.label_status == "shift":
+            self.label_status = "labeling"
         # labeling
         else:
             self.set_notification(
@@ -367,10 +348,6 @@ class GUI(object):
             elif self.label_status == "labeling":
                 self.set_notification("The next step is to label the image by clicking on the screen")
 
-            self.button_pressed = True
-
-        # len set label clicked
-        elif self.len_set_back.is_pressed(event) and self.len_set_back.object is not None:
             self.button_pressed = True
 
         # select labeling tool
@@ -470,12 +447,14 @@ class GUI(object):
                     x_index = floor((self.map.get_click_pos(event)[0]+self.new_img_width//2)*self.ratio/3)
                     y_index = floor((self.map.get_click_pos(event)[1]+self.new_img_height//2)*self.ratio/3)
 
-                    if self.map.rectangle_exists(f"{x_index}x{y_index}"):
-                        if self.map.rectangles[f"{x_index}x{y_index}"].c != self.colors[self.label_tool]:
-                            self.map.rectangles[f"{x_index}x{y_index}"].set_color(self.colors[self.label_tool])
-
-                    else:
-                        self.map.add_rectangle(f"{x_index}x{y_index}", -self.new_img_width//2+(x_index*3/self.ratio), -self.new_img_height//2+(y_index*3/self.ratio), round(3/self.ratio), round(3/self.ratio), None, self.colors[self.label_tool], 0)
+                    if 0 <= x_index <= 200 and 0 <= y_index <= 600:
+                        # change existing one
+                        if self.map.rectangle_exists(f"{x_index}x{y_index}"):
+                            if self.map.rectangles[f"{x_index}x{y_index}"].c != self.colors[self.label_tool]:
+                                self.map.rectangles[f"{x_index}x{y_index}"].set_color(self.colors[self.label_tool])
+                        # add new rectangle
+                        else:
+                            self.map.add_rectangle(f"{x_index}x{y_index}", -self.new_img_width//2+(x_index*3/self.ratio), -self.new_img_height//2+(y_index*3/self.ratio), round(3/self.ratio), round(3/self.ratio), None, self.colors[self.label_tool], 0)
 
         self.button_pressed = False
 
@@ -503,16 +482,6 @@ class GUI(object):
         if self.notification is not None:
             self.notification_back.set_pos(self.WINDOW_SIZE[0]//2-self.F2.measure(self.notification)//2-10, 85)
             self.notification_text.set_pos(self.WINDOW_SIZE[0]//2, 97)
-
-        # re place distance components
-        self.len_set_back.set_pos(self.WINDOW_SIZE[0] // 2 - 200, self.WINDOW_SIZE[1] // 2 - 100, False if self.len_set_back.object is None else True)
-        self.len_set_tit.set_pos(self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2-50)
-        self.len_set_entry.set_pos(self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]//2-11)
-        self.len_set_under.set_pos(self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]//2+11, self.WINDOW_SIZE[0]//2+150, self.WINDOW_SIZE[1]//2+11)
-        self.len_set_unit.set_pos(self.WINDOW_SIZE[0]//2+150-self.F1.measure("m"), self.WINDOW_SIZE[1]//2+10)
-        self.len_set_info_1.set_pos(self.WINDOW_SIZE[0]//2-128, self.WINDOW_SIZE[1]//2+42)
-        self.len_set_info_2.set_pos(self.WINDOW_SIZE[0]//2-64, self.WINDOW_SIZE[1]//2+50)
-        self.len_set_info_3.set_pos(self.WINDOW_SIZE[0]//2+128, self.WINDOW_SIZE[1]//2+42)
 
         # re place labeling components
         self.label_back.set_pos(self.WINDOW_SIZE[0]//2-250, self.WINDOW_SIZE[1]-75)
@@ -564,14 +533,15 @@ class GUI(object):
             x_index = floor((self.map.get_click_pos(event)[0] + self.new_img_width // 2) * self.ratio / 3)
             y_index = floor((self.map.get_click_pos(event)[1] + self.new_img_height // 2) * self.ratio / 3)
 
-            if self.map.rectangle_exists(f"{x_index}x{y_index}"):
-                print(self.map.rectangles[f"{x_index}x{y_index}"].c, self.colors[self.label_tool])
-                if self.map.rectangles[f"{x_index}x{y_index}"].c != self.colors[self.label_tool]:
-                    self.map.rectangles[f"{x_index}x{y_index}"].set_color(self.colors[self.label_tool])
-
-            else:
-                self.map.add_rectangle(f"{x_index}x{y_index}", -self.new_img_width // 2 + (x_index * 3 / self.ratio), -self.new_img_height // 2 + (y_index * 3 / self.ratio), round(3 / self.ratio),round(3 / self.ratio), None, self.colors[self.label_tool], 0)
-
+            print(x_index, y_index)
+            if 0 <= x_index <= 66 and 0 <= y_index <= 199:
+                # change existing one
+                if self.map.rectangle_exists(f"{x_index}x{y_index}"):
+                    if self.map.rectangles[f"{x_index}x{y_index}"].c != self.colors[self.label_tool]:
+                        self.map.rectangles[f"{x_index}x{y_index}"].set_color(self.colors[self.label_tool])
+                # add new rectangle
+                else:
+                    self.map.add_rectangle(f"{x_index}x{y_index}", -self.new_img_width//2+(x_index*3/self.ratio), -self.new_img_height//2+(y_index*3/self.ratio), round(3/self.ratio), round(3/self.ratio), None, self.colors[self.label_tool], 0)
 
         self.last_x = event.x
         self.last_y = event.y
@@ -580,14 +550,24 @@ class GUI(object):
     def wheel(self, event):
         self.map.add_zoom(-event.delta/1200)
 
-    # open the window
-    def main_loop(self):
-        self.root.mainloop()
-
     # key event
     def key(self, event):
         if event.char == "n":
             self.next_button_press()
+
+    # left arrow
+    def left(self, event):
+        if self.label_status == "shift":
+            self.add_shift("left", 10)
+
+    # right arrow
+    def right(self, event):
+        if self.label_status == "shift":
+            self.add_shift("right", 10)
+
+    # open the window
+    def main_loop(self):
+        self.root.mainloop()
 
 
 if __name__ == '__main__':
