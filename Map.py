@@ -522,8 +522,13 @@ class Map(object):
         self.zoom_but.set_pos(self.zoom_slider_pos[0]+round(self.zoom*100)-10 if self.zoom <= 2.1 else self.zoom_slider_pos[0]+200, self.zoom_slider_pos[1]-8)
 
     # return position on map for left click
-    def get_click_pos(self, event) -> (int, int):
-        return (event.x-self.center[0])/self.zoom-self.x_offset/self.zoom, (event.y-self.center[1])/self.zoom-self.y_offset/self.zoom
+    def get_click_pos(self, event, pos: (int, int) = None) -> (int, int):
+        # from event
+        if pos is None:
+            return (event.x-self.center[0])/self.zoom-self.x_offset/self.zoom, (event.y-self.center[1])/self.zoom-self.y_offset/self.zoom
+        # from position
+        else:
+            return (pos[0]-self.center[0])/self.zoom-self.x_offset/self.zoom, (pos[1]-self.center[1])/self.zoom-self.y_offset/self.zoom
 
     # left click
     def button_1(self, event):

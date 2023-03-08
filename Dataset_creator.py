@@ -4,7 +4,7 @@ from tkinter import filedialog
 import datetime
 import os
 from math import sqrt, floor, ceil
-from PIL import Image
+import numpy as np
 
 from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image, Advanced_Entry, Advanced_Line
 from Map import Map
@@ -34,6 +34,7 @@ class GUI(object):
         self.map.add_zoom_slider(self.WINDOW_SIZE[0]//2-100, self.WINDOW_SIZE[1]-113)
 
         self.map.set_to_background(forever=True)
+        self.map.draw()
 
         # other parameters
         self.last_x = 0
@@ -168,9 +169,6 @@ class GUI(object):
         self.label_water_txt.draw()
         self.label_out_txt.draw()
         self.label_path_txt.draw()
-
-        # draw map
-        self.map.draw()
 
         self.root.after(27, self.main)
 
@@ -530,18 +528,31 @@ class GUI(object):
         slider = self.map.add_offset(event.x-self.last_x, event.y-self.last_y, event, "b1")
 
         if not slider and not self.button_pressed and self.label_status == "labeling":
-            x_index = floor((self.map.get_click_pos(event)[0] + self.new_img_width // 2) * self.ratio / 3)
-            y_index = floor((self.map.get_click_pos(event)[1] + self.new_img_height // 2) * self.ratio / 3)
+            # start and end map pos
+            start = self.map.get_click_pos(None, pos=(self.last_x, self.last_y))
+            end = self.map.get_click_pos(event)
 
-            print(x_index, y_index)
-            if 0 <= x_index <= 66 and 0 <= y_index <= 199:
-                # change existing one
-                if self.map.rectangle_exists(f"{x_index}x{y_index}"):
-                    if self.map.rectangles[f"{x_index}x{y_index}"].c != self.colors[self.label_tool]:
-                        self.map.rectangles[f"{x_index}x{y_index}"].set_color(self.colors[self.label_tool])
-                # add new rectangle
-                else:
-                    self.map.add_rectangle(f"{x_index}x{y_index}", -self.new_img_width//2+(x_index*3/self.ratio), -self.new_img_height//2+(y_index*3/self.ratio), round(3/self.ratio), round(3/self.ratio), None, self.colors[self.label_tool], 0)
+            # calculate cursor movement variables
+            delta_x = start[0]-end[0]
+            delta_y = start[1]-end[1]
+            steps = round(sqrt(delta_x**2+delta_y**2)/round(3/self.ratio))+1
+
+            for i in range(steps):
+                # calculate intermediate x, y positions
+                x = end[0] + delta_x / steps * i
+                y = end[1] + delta_y / steps * i
+
+                x_index = floor((x + self.new_img_width // 2) * self.ratio / 3)
+                y_index = floor((y + self.new_img_height // 2) * self.ratio / 3)
+
+                if 0 <= x_index <= 66 and 0 <= y_index <= 199:
+                    # change existing one
+                    if self.map.rectangle_exists(f"{x_index}x{y_index}"):
+                        if self.map.rectangles[f"{x_index}x{y_index}"].c != self.colors[self.label_tool]:
+                            self.map.rectangles[f"{x_index}x{y_index}"].set_color(self.colors[self.label_tool])
+                    # add new rectangle
+                    else:
+                        self.map.add_rectangle(f"{x_index}x{y_index}", -self.new_img_width//2+(x_index*3/self.ratio), -self.new_img_height//2+(y_index*3/self.ratio), round(3/self.ratio), round(3/self.ratio), None, self.colors[self.label_tool], 0)
 
         self.last_x = event.x
         self.last_y = event.y
