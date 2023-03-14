@@ -114,6 +114,7 @@ class Advanced_Circle(object):
 
         return '#{:02x}{:02x}{:02x}'.format(rgb[0], rgb[1], rgb[2])
 
+
 class Advanced_Polygon(object):
     def __init__(self, canvas: tk.Canvas, pos, color: (int, int, int), outline: (int, int, int) = None):
         self.canvas = canvas
@@ -129,7 +130,7 @@ class Advanced_Polygon(object):
     # draw circle on the screen
     def draw(self):
         if self.object is None:
-            self.object = self.canvas.create_polygon(self.pos, outline=self.rgb_to_hex(self.ol), fill=self.rgb_to_hex(self.c))
+            self.object = self.canvas.create_polygon(self.pos, fill=self.rgb_to_hex(self.c))
 
         # update z layer pos
         self.__update_z_pos()
@@ -147,7 +148,7 @@ class Advanced_Polygon(object):
 
         # change position
         if self.object is not None:
-            self.canvas.coords(self.object, self.pos)
+            self.canvas.coords(self.object, [x for tup in self.pos for x in tup])
             self.canvas.tag_raise(self.object, tk.ALL)
 
             # update z layer pos

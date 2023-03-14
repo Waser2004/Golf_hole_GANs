@@ -4,7 +4,6 @@ from tkinter import filedialog
 import datetime
 import os
 from math import sqrt, floor, ceil
-import numpy as np
 
 from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image, Advanced_Entry, Advanced_Line
 from Map import Map
@@ -83,26 +82,26 @@ class GUI(object):
 
         # label fields
         self.label_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-250, self.WINDOW_SIZE[1]//2-75, 500, 50, None, (240, 240, 240), 6)
-        self.label_green = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-245, self.WINDOW_SIZE[1]//2-70, 40, 40, None, self.colors[0], 2)
+        self.label_green = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-245, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[0], (240, 240, 240), 2)
         self.label_green_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-225, self.WINDOW_SIZE[1]//2-50, "green", (0, 0, 0), self.F3, "center")
-        self.label_tee = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-195, self.WINDOW_SIZE[1]//2-70, 40, 40, None, self.colors[1], 2)
-        self.label_tee_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-175, self.WINDOW_SIZE[1]//2-50, "tee", (255, 255, 255), self.F3, "center")
-        self.label_fairway = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-145, self.WINDOW_SIZE[1]//2-70, 40, 40, None, self.colors[2], 2)
-        self.label_fairway_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-125, self.WINDOW_SIZE[1]//2-50, "fairway", (255, 255, 255), self.F3, "center")
-        self.label_srough = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-95, self.WINDOW_SIZE[1]//2-70, 40, 40, None, self.colors[3], 2)
-        self.label_srough_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-75, self.WINDOW_SIZE[1]//2-50, "semi\nrough", (255, 255, 255), self.F3, "center")
-        self.label_hrough = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-45, self.WINDOW_SIZE[1]//2-70, 40, 40, None, self.colors[4], 2)
-        self.label_hrough_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-25, self.WINDOW_SIZE[1]//2-50, "high\nrough", (255, 255, 255), self.F3, "center")
-        self.label_bunker = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+5, self.WINDOW_SIZE[1]//2-70, 40, 40, None, self.colors[5], 2)
+        self.label_tee = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-195, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[1], (240, 240, 240), 2)
+        self.label_tee_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-175, self.WINDOW_SIZE[1]//2-50, "tee", (0, 0, 0), self.F3, "center")
+        self.label_fairway = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-145, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[2], (240, 240, 240), 2)
+        self.label_fairway_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-125, self.WINDOW_SIZE[1]//2-50, "fairway", (0, 0, 0), self.F3, "center")
+        self.label_srough = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-95, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[3], (240, 240, 240), 2)
+        self.label_srough_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-75, self.WINDOW_SIZE[1]//2-50, "semi\nrough", (0, 0, 0), self.F3, "center")
+        self.label_hrough = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-45, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[4], (240, 240, 240), 2)
+        self.label_hrough_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-25, self.WINDOW_SIZE[1]//2-50, "high\nrough", (0, 0, 0), self.F3, "center")
+        self.label_bunker = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+5, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[5], (240, 240, 240), 2)
         self.label_bunker_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+25, self.WINDOW_SIZE[1]//2-50, "bunker", (0, 0, 0), self.F3, "center")
-        self.label_forest = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+55, self.WINDOW_SIZE[1]//2-70, 40, 40, None, self.colors[6], 2)
-        self.label_forest_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+75, self.WINDOW_SIZE[1]//2-50, "forest", (255, 255, 255), self.F3, "center")
-        self.label_water = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+105, self.WINDOW_SIZE[1]//2-70, 40, 40, None, self.colors[7], 2)
-        self.label_water_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+25, self.WINDOW_SIZE[1]//2-50, "water", (255, 255, 255), self.F3, "center")
-        self.label_out = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0] // 2 + 155, self.WINDOW_SIZE[1] // 2 - 70, 40, 40, None, self.colors[8], 2)
+        self.label_forest = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+55, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[6], (240, 240, 240), 2)
+        self.label_forest_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+75, self.WINDOW_SIZE[1]//2-50, "forest", (0, 0, 0), self.F3, "center")
+        self.label_water = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+105, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[7], (240, 240, 240), 2)
+        self.label_water_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+25, self.WINDOW_SIZE[1]//2-50, "water", (0, 0, 0), self.F3, "center")
+        self.label_out = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0] // 2 + 155, self.WINDOW_SIZE[1] // 2 - 70, 40, 40, self.colors[8], (240, 240, 240), 2)
         self.label_out_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0] // 2 + 25, self.WINDOW_SIZE[1] // 2 - 50, "out", (0, 0, 0), self.F3, "center")
-        self.label_path = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0] // 2 + 205, self.WINDOW_SIZE[1] // 2 - 70, 40, 40, None, self.colors[9], 2)
-        self.label_path_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0] // 2 + 25, self.WINDOW_SIZE[1] // 2 - 50, "path", (255, 255, 255), self.F3, "center")
+        self.label_path = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0] // 2 + 205, self.WINDOW_SIZE[1] // 2 - 70, 40, 40, self.colors[9], (240, 240, 240), 2)
+        self.label_path_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0] // 2 + 25, self.WINDOW_SIZE[1] // 2 - 50, "path", (0, 0, 0), self.F3, "center")
 
         # shift
         self.shift = 0
@@ -146,6 +145,9 @@ class GUI(object):
             # reset
             self.notification = None
             self.notification_time = None
+
+        # draw map
+        self.map.draw()
 
         # draw labeling components
         self.label_back.draw()
@@ -217,30 +219,36 @@ class GUI(object):
         for i in range(round(600/box_size)+1):
             self.map.add_line(f"hor: {i}", -self.new_img_width//2, -self.new_img_height//2+(i*box_size/self.ratio), +self.new_img_width//2, -self.new_img_height//2+(i*box_size/self.ratio), 1, (60, 60, 60), True)
 
+        self.map.add_polygon_map("hole_map", -self.new_img_width//2, -self.new_img_height//2, (box_size/self.ratio), (67, 200), self.colors)
+
     # undo tool highlighting
     def undo_highlight(self):
-        self.label_green.set_color(self.label_green.c)
-        self.label_tee.set_color(self.label_tee.c)
-        self.label_fairway.set_color(self.label_fairway.c)
-        self.label_srough.set_color(self.label_srough.c)
-        self.label_hrough.set_color(self.label_hrough.c)
-        self.label_bunker.set_color(self.label_bunker.c)
-        self.label_forest.set_color(self.label_forest.c)
-        self.label_water.set_color(self.label_water.c)
-        self.label_out.set_color(self.label_out.c)
-        self.label_path.set_color(self.label_path.c)
+        self.label_green.set_color((240, 240, 240), self.label_green.o)
+        self.label_tee.set_color((240, 240, 240), self.label_tee.o)
+        self.label_fairway.set_color((240, 240, 240), self.label_fairway.o)
+        self.label_srough.set_color((240, 240, 240), self.label_srough.o)
+        self.label_hrough.set_color((240, 240, 240), self.label_hrough.o)
+        self.label_bunker.set_color((240, 240, 240), self.label_bunker.o)
+        self.label_forest.set_color((240, 240, 240), self.label_forest.o)
+        self.label_water.set_color((240, 240, 240), self.label_water.o)
+        self.label_out.set_color((240, 240, 240), self.label_out.o)
+        self.label_path.set_color((240, 240, 240), self.label_path.o)
 
     # shift
     def add_shift(self, dir: str, dis: int = 10):
         self.shift = self.shift+dis if dir == "right" else self.shift-dis
         delta = dis if dir == "right" else -dis
 
+        # add shift to box indicator lines
         for i in range(round(201/3)+1):
             pos = self.map.lines_info[f"vert: {i}"]
             self.map.set_line_pos(f"vert: {i}", pos[0]+delta, pos[1], pos[2]+delta, pos[3])
         for i in range(round(600/3)+1):
             pos = self.map.lines_info[f"hor: {i}"]
             self.map.set_line_pos(f"hor: {i}", pos[0]+delta, pos[1], pos[2]+delta, pos[3])
+
+        # add shift to polygon map
+        self.map.polygon_map["hole_map"].set_pos(self.map.polygon_map["hole_map"].x+delta*self.map.zoom, self.map.polygon_map["hole_map"].y)
 
     # next button
     def next_button_press(self):
@@ -354,52 +362,52 @@ class GUI(object):
             if self.label_green.is_pressed(event):
                 self.label_tool = 0
                 self.undo_highlight()
-                self.label_green.set_color(self.label_green.c, outline=(0, 0, 0))
+                self.label_green.set_color(self.label_green.o)
             # tee
             elif self.label_tee.is_pressed(event):
                 self.label_tool = 1
                 self.undo_highlight()
-                self.label_tee.set_color(self.label_tee.c, outline=(0, 0, 0))
+                self.label_tee.set_color(self.label_tee.o)
             # fairway
             elif self.label_fairway.is_pressed(event):
                 self.label_tool = 2
                 self.undo_highlight()
-                self.label_fairway.set_color(self.label_fairway.c, outline=(0, 0, 0))
+                self.label_fairway.set_color(self.label_fairway.o)
             # semi rough
             elif self.label_srough.is_pressed(event):
                 self.label_tool = 3
                 self.undo_highlight()
-                self.label_srough.set_color(self.label_srough.c, outline=(0, 0, 0))
+                self.label_srough.set_color(self.label_srough.o)
             # high rough
             elif self.label_hrough.is_pressed(event):
                 self.label_tool = 4
                 self.undo_highlight()
-                self.label_hrough.set_color(self.label_hrough.c, outline=(0, 0, 0))
+                self.label_hrough.set_color(self.label_hrough.o)
             # bunker
             elif self.label_bunker.is_pressed(event):
                 self.label_tool = 5
                 self.undo_highlight()
-                self.label_bunker.set_color(self.label_bunker.c, outline=(0, 0, 0))
+                self.label_bunker.set_color(self.label_bunker.o)
             # forest
             elif self.label_forest.is_pressed(event):
                 self.label_tool = 6
                 self.undo_highlight()
-                self.label_forest.set_color(self.label_forest.c, outline=(255, 255, 255))
+                self.label_forest.set_color(self.label_forest.o)
             # water
             elif self.label_water.is_pressed(event):
                 self.label_tool = 7
                 self.undo_highlight()
-                self.label_water.set_color(self.label_water.c, outline=(0, 0, 0))
+                self.label_water.set_color(self.label_water.o)
             # out
             elif self.label_out.is_pressed(event):
                 self.label_tool = 8
                 self.undo_highlight()
-                self.label_out.set_color(self.label_out.c, outline=(0, 0, 0))
+                self.label_out.set_color(self.label_out.o)
             # path of bounds
             elif self.label_path.is_pressed(event):
                 self.label_tool = 9
                 self.undo_highlight()
-                self.label_path.set_color(self.label_path.c, outline=(0, 0, 0))
+                self.label_path.set_color(self.label_path.o)
 
             self.button_pressed = True
 
@@ -445,14 +453,10 @@ class GUI(object):
                     x_index = floor((self.map.get_click_pos(event)[0]+self.new_img_width//2)*self.ratio/3)
                     y_index = floor((self.map.get_click_pos(event)[1]+self.new_img_height//2)*self.ratio/3)
 
-                    if 0 <= x_index <= 200 and 0 <= y_index <= 600:
+                    if 0 <= x_index <= 66 and 0 <= y_index <= 199:
                         # change existing one
-                        if self.map.rectangle_exists(f"{x_index}x{y_index}"):
-                            if self.map.rectangles[f"{x_index}x{y_index}"].c != self.colors[self.label_tool]:
-                                self.map.rectangles[f"{x_index}x{y_index}"].set_color(self.colors[self.label_tool])
-                        # add new rectangle
-                        else:
-                            self.map.add_rectangle(f"{x_index}x{y_index}", -self.new_img_width//2+(x_index*3/self.ratio), -self.new_img_height//2+(y_index*3/self.ratio), round(3/self.ratio), round(3/self.ratio), None, self.colors[self.label_tool], 0)
+                        if self.label_tool is not None:
+                            self.map.polygon_map["hole_map"].set_index(x_index, y_index, self.label_tool)
 
         self.button_pressed = False
 
@@ -547,12 +551,8 @@ class GUI(object):
 
                 if 0 <= x_index <= 66 and 0 <= y_index <= 199:
                     # change existing one
-                    if self.map.rectangle_exists(f"{x_index}x{y_index}"):
-                        if self.map.rectangles[f"{x_index}x{y_index}"].c != self.colors[self.label_tool]:
-                            self.map.rectangles[f"{x_index}x{y_index}"].set_color(self.colors[self.label_tool])
-                    # add new rectangle
-                    else:
-                        self.map.add_rectangle(f"{x_index}x{y_index}", -self.new_img_width//2+(x_index*3/self.ratio), -self.new_img_height//2+(y_index*3/self.ratio), round(3/self.ratio), round(3/self.ratio), None, self.colors[self.label_tool], 0)
+                    if self.label_tool is not None:
+                        self.map.polygon_map["hole_map"].set_index(x_index, y_index, self.label_tool)
 
         self.last_x = event.x
         self.last_y = event.y

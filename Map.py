@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter.font import Font
 
 from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Circle, Advanced_Line, Advanced_Image
+from Data_class import Data
 
 
 class Map(object):
@@ -30,6 +31,8 @@ class Map(object):
         self.circles = {}
         self.lines_info = {}
         self.lines = {}
+        self.polygon_map_info = {}
+        self.polygon_map = {}
 
         self.order = {}
 
@@ -102,6 +105,16 @@ class Map(object):
         self.order.update({f"L:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
         self.sort_order()
 
+    # add polygon map
+    def add_polygon_map(self, name: str, x: int, y: int, box_size: float, shape: (int, int), colors):
+        assert name not in self.polygon_map, f"Name does already exist in the dictionary choose an other one {name}"
+
+        self.polygon_map_info.update({name: [x, y, box_size]})
+        self.polygon_map.update({name: Data(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), box_size*self.zoom, shape, colors)})
+
+        self.order.update({f"P:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
+        self.sort_order()
+
     # set rectangle pos
     def set_rectangle_pos(self, name: str, x: int, y: int):
         assert name in self.rectangles, "Name does not exist cant change position of a non existing object"
@@ -135,11 +148,18 @@ class Map(object):
     def set_text_pos(self, name: str, x: int, y: int):
         assert name in self.texts, "Name does not exist cant change position of a non existing object"
 
+        self.texts_info[name][0], self.texts_info[name][1] = x, y
         self.texts[name].set_pos(self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom))
+
+    def set_polygon_map_pos(self, name: str, x: int, y: int):
+        assert name in self.polygon_map, "Name does not exist cant change position of a non existing object"
+
+        self.polygon_map_info[name][0], self.polygon_map_info[name][1] = x, y
+        self.polygon_map[name].set_pos(self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom))
 
     # change Rectangle z pos
     def set_rectangle_z_pos(self, name: str, z: int):
-        assert name in self.rectangles, "Name does already exist in the dictionary choose an other one"
+        assert name in self.rectangles, "Name does not exist cant change z position of a non existing object"
         assert z < len(self.order), "z value is to big"
 
         old_z = self.order[f"R:{name}"]
@@ -159,7 +179,7 @@ class Map(object):
 
     # change Text z pos
     def set_text_z_pos(self, name: str, z: int):
-        assert name in self.texts, "Name does already exist in the dictionary choose an other one"
+        assert name in self.texts, "Name does not exist cant change z position of a non existing object"
         assert z < len(self.order), "z value is to big"
 
         old_z = self.order[f"T:{name}"]
@@ -179,7 +199,7 @@ class Map(object):
 
     # change image z pos
     def set_img_z_pos(self, name: str, z: int):
-        assert name in self.images, "Name does already exist in the dictionary choose an other one"
+        assert name in self.images, "Name does not exist cant change z position of a non existing object"
         assert z < len(self.order), "z value is to big"
 
         old_z = self.order[f"I:{name}"]
@@ -199,7 +219,7 @@ class Map(object):
 
     # change circle z pos
     def set_circle_z_pos(self, name: str, z: int):
-        assert name in self.circles, "Name does already exist in the dictionary choose an other one"
+        assert name in self.circles, "Name does not exist cant change z position of a non existing object"
         assert z < len(self.order), "z value is to big"
 
         old_z = self.order[f"C:{name}"]
@@ -219,7 +239,7 @@ class Map(object):
 
     # change circle z pos
     def set_line_z_pos(self, name: str, z: int):
-        assert name in self.lines, "Name does already exist in the dictionary choose an other one"
+        assert name in self.lines, "Name does not exist cant change z position of a non existing object"
         assert z < len(self.order), "z value is to big"
 
         old_z = self.order[f"L:{name}"]
@@ -234,6 +254,27 @@ class Map(object):
 
         # set new z value
         self.order[f"L:{name}"] = z
+
+        self.sort_order()
+
+    # change polygon map z pos
+    def set_polygon_map_z_pos(self, name: str, z: int):
+        assert name in self.polygon_map, "Name does not exist cant change z position of a non existing object"
+        assert z < len(self.order), "z value is to big"
+
+        old_z = self.order[f"P:{name}"]
+
+        # change other z values
+        if old_z < z:
+            for key, value in list(self.order.items())[old_z + 1:z + 1]:
+                self.order[key] -= 1
+        if old_z > z:
+            for key, value in list(self.order.items())[z:old_z]:
+                self.order[key] += 1
+
+        # set new z value
+        self.order[f"P:{name}"] = z
+        self.order[f":{name}"] = z
 
         self.sort_order()
 
@@ -256,6 +297,10 @@ class Map(object):
     # check if circle with name exists
     def line_exists(self, name: str) -> bool:
         return name in self.lines
+
+    # check if polygon map exists
+    def polygon_map_exists(self, name: str) -> bool:
+        return name in self.polygon_map
 
     # lock line width
     def lock_line_width(self, name: str):
@@ -331,6 +376,9 @@ class Map(object):
             elif key[0] == "L":
                 self.lines[key[2:]].draw()
 
+            elif key[0] == "P":
+                self.polygon_map[key[2:]].draw()
+
         if self.origin_but_pos is not None:
             self.origin_but.draw()
             self.origin_img.draw()
@@ -357,6 +405,9 @@ class Map(object):
             elif key[0] == "L":
                 self.lines[key[2:]].set_to_background(forever=True if forever else False)
 
+            elif key[0] == "P":
+                self.polygon_map[key[2:]].set_to_background(forever=True if forever else False)
+
         # set forever back/foreground
         self.fev_background = forever
         self.fev_foreground = False if forever else self.fev_foreground
@@ -379,6 +430,9 @@ class Map(object):
 
             elif key[0] == "L":
                 self.lines[key[2:]].set_to_foregorund(forever=True if forever else False)
+
+            elif key[0] == "P":
+                self.polygon_map[key[2:]].set_to_foreground(forever=True if forever else False)
 
         # set forever back/foreground
         self.fev_background = False if forever else self.fev_background
@@ -419,6 +473,10 @@ class Map(object):
                 value = self.lines[key[2:]]
                 self.lines[key[2:]].set_pos(value.x1+delta[0], value.y1+delta[1], value.x2+delta[0], value.y2+delta[1])
 
+            elif key[0] == "P":
+                value = self.polygon_map[key[2:]]
+                self.polygon_map[key[2:]].set_pos(value.x+delta[0], value.y+delta[1])
+
     # add x, y offset
     def add_offset(self, x: int, y: int, event = None, key: str = "b1") -> bool:
         if not self.move_slider and key == "b2":
@@ -454,6 +512,10 @@ class Map(object):
                 elif key[0] == "L":
                     value = self.lines[key[2:]]
                     self.lines[key[2:]].set_pos(value.x1+x, value.y1+y, value.x2+x, value.y2+y)
+
+                elif key[0] == "P":
+                    value = self.polygon_map[key[2:]]
+                    self.polygon_map[key[2:]].set_pos(value.x+x, value.y+y)
 
             return True
 
@@ -519,6 +581,11 @@ class Map(object):
                 else:
                     value.set_width(self.lines_info[key[2:]][4])
 
+            elif key[0] == "P":
+                value = self.polygon_map[key[2:]]
+                value.set_pos(self.polygon_map_info[key[2:]][0]*self.zoom+self.screen_center[0], self.polygon_map_info[key[2:]][1]*self.zoom+self.screen_center[1])
+                value.set_box_size(self.polygon_map_info[key[2:]][2]*self.zoom)
+
         self.zoom_but.set_pos(self.zoom_slider_pos[0]+round(self.zoom*100)-10 if self.zoom <= 2.1 else self.zoom_slider_pos[0]+200, self.zoom_slider_pos[1]-8)
 
     # return position on map for left click
@@ -534,7 +601,6 @@ class Map(object):
     def button_1(self, event):
         # origin button
         if self.origin_but is not None and self.origin_but.is_pressed(event):
-            print("okay")
             self.add_offset(-self.x_offset, -self.y_offset, event, "b2")
             return True
 

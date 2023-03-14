@@ -1,12 +1,13 @@
 import numpy as np
 import tkinter as tk
 from math import sqrt
+from skimage.measure import label
 
 from Advanced_Canvas import Advanced_Polygon
 
 
 class Data(object):
-    def __init__(self, canvas: tk.Canvas, x: int, y: int, box_size: int, shape: (int, int), colors):
+    def __init__(self, canvas: tk.Canvas, x: int, y: int, box_size: float, shape: (int, int), colors):
         self.canvas = canvas
         self.x = x
         self.y = y
@@ -14,157 +15,111 @@ class Data(object):
         self.DATA = np.zeros(shape)
         self.GROUPS = np.zeros(shape)
 
+        self.foreground = False
+        self.background = False
+
         self.colors = colors
         self.polygons = {}
+        self.polygon_color = {}
 
         self.canvas_objects = {}
 
     # change an index of data
     def set_index(self, x: int, y: int, new_index: int):
-        x, y = y, x
         assert 0 <= x <= self.DATA.shape[0] and 0 <= y <= self.DATA.shape[1], f"{x}, {y} location does not exist"
-        assert 0 <= new_index < len(self.colors), "index is not in range of colors"
+        assert 0 <= new_index+1 <= len(self.colors), "index is not in range of colors"
 
-        # update data
-        self.DATA[x, y] = new_index
-        data = np.pad(self.DATA, pad_width=1, mode="constant")
+        # change color of pixel
+        self.DATA[x, y] = new_index+1
 
-        added_to_group = False
-        # calculate new groups
-        if x-1 >= 0 and y-1 >= 0 and self.DATA[x-1, y-1] == new_index:
-            self.GROUPS[x, y] = self.GROUPS[x-1, y-1]
-            added_to_group = True
+        # group the array
+        self.GROUPS = label(self.DATA, connectivity=2)
 
-        if y-1 >= 0 and self.DATA[x, y-1] == new_index:
-            if not added_to_group:
-                self.GROUPS[x, y] = self.GROUPS[x, y-1]
-                added_to_group = True
-            elif self.GROUPS[x, y-1] != self.GROUPS[x, y]:
-                self.GROUPS[self.GROUPS == self.GROUPS[x, y-1]] = self.GROUPS[x, y]
-
-        if x+2 <= self.DATA.shape[0] and y-1 >= 0 and self.DATA[x+1, y-1] == new_index:
-            if not added_to_group:
-                self.GROUPS[x, y] = self.GROUPS[x+1, y-1]
-                added_to_group = True
-            elif self.GROUPS[x+1, y-1] != self.GROUPS[x, y]:
-                self.GROUPS[self.GROUPS == self.GROUPS[x+1, y-1]] = self.GROUPS[x, y]
-
-        if x+2 <= self.DATA.shape[0] and self.DATA[x+1, y] == new_index:
-            if not added_to_group:
-                self.GROUPS[x, y] = self.GROUPS[x+1, y]
-                added_to_group = True
-            elif self.GROUPS[x+1, y] != self.GROUPS[x, y]:
-                self.GROUPS[self.GROUPS == self.GROUPS[x+1, y]] = self.GROUPS[x, y]
-
-        if x+2 <= self.DATA.shape[0] and y+2 <= self.DATA.shape[1] and self.DATA[x+1, y+1] == new_index:
-            if not added_to_group:
-                self.GROUPS[x, y] = self.GROUPS[x+1, y+1]
-                added_to_group = True
-            elif self.GROUPS[x+1, y+1] != self.GROUPS[x, y]:
-                self.GROUPS[self.GROUPS == self.GROUPS[x+1, y+1]] = self.GROUPS[x, y]
-
-        if y+2 <= self.DATA.shape[1] and self.DATA[x, y+1] == new_index:
-            if not added_to_group:
-                self.GROUPS[x, y] = self.GROUPS[x, y+1]
-                added_to_group = True
-            elif self.GROUPS[x, y+1] != self.GROUPS[x, y]:
-                self.GROUPS[self.GROUPS == self.GROUPS[x, y+1]] = self.GROUPS[x, y]
-
-        if x-1 >= 0 and y+2 <= self.DATA.shape[1] and self.DATA[x-1, y+1] == new_index:
-            if not added_to_group:
-                self.GROUPS[x, y] = self.GROUPS[x-1, y+1]
-                added_to_group = True
-            elif self.GROUPS[x-1, y+1] != self.GROUPS[x, y]:
-                self.GROUPS[self.GROUPS == self.GROUPS[x-1, y+1]] = self.GROUPS[x, y]
-
-        if x-1 >= 0 and self.DATA[x-1, y] == new_index:
-            if not added_to_group:
-                self.GROUPS[x, y] = self.GROUPS[x-1, y]
-                added_to_group = True
-            elif self.GROUPS[x-1, y] != self.GROUPS[x, y]:
-                self.GROUPS[self.GROUPS == self.GROUPS[x-1, y]] = self.GROUPS[x, y]
-
-        if not added_to_group:
-            self.GROUPS[x, y] = np.max(self.GROUPS)+1
+        # calculate the polygon structure
+        self.calc_polygon()
 
     # calculate the outline of the polygon
     def calc_polygon(self):
         groups = np.unique(self.GROUPS)
 
-        for i in groups:
-            if i != 0:
-                # create new list
-                group = np.pad(np.where(self.GROUPS == i, 1, 0), pad_width=1, mode="constant")
-                # where 1
-                idx = np.where(self.GROUPS == i)
+        for group_index in groups:
+            if group_index != 0:
+                # create map
+                group = np.pad(np.where(self.GROUPS == group_index, 1, 0), pad_width=1, mode="constant")
+                group_idx = np.where(self.GROUPS == group_index)
 
-                # find the indices of non-zero elements
-                indices = np.argwhere(group)
+                # calculate main outline
+                corners = self.__calc_outline(group, group_idx[0][0], group_idx[1][0])
 
-                # extract the minimum and maximum indices for each dimension
-                min_indices = indices.min(axis=0)
-                max_indices = indices.max(axis=0)
+                # initialise hole map
+                hole_data = np.zeros(self.DATA.shape)
 
-                new_arr = np.pad(np.where(self.GROUPS == i, 1, 0), pad_width=1, mode="constant")
+                # Find the minimum and maximum y-coordinates of the corners vertices
+                arr_corners = np.array(corners)
+                y_min = int(np.floor(arr_corners[:, 1]).min())
+                y_max = int(np.ceil(arr_corners[:, 1]).max())
 
-                # fill surrounding 0 with 1 / merge them to the form
-                self.flood_fill(new_arr, 0, 0, 2, 0)
-                new_arr = np.where(new_arr == 2, 1, new_arr)
+                # Loop over each row in the range of y-coordinates
+                for y in range(y_min, y_max + 1):
+                    # Find the x-coordinates where the arr_corners edges intersect the row
+                    intersections = []
+                    for i in range(len(arr_corners)):
+                        j = (i + 1) % len(arr_corners)
+                        if arr_corners[i, 1] < y and arr_corners[j, 1] >= y or arr_corners[j, 1] < y and arr_corners[i, 1] >= y:
+                            x = (y - arr_corners[i, 1]) * (arr_corners[j, 0] - arr_corners[i, 0]) / (
+                                        arr_corners[j, 1] - arr_corners[i, 1]) + arr_corners[i, 0]
+                            intersections.append(x)
 
-                # sort the holes in to groups
-                group_index = 2
-                while np.any(new_arr == 0):
-                    # flood fill the holes to define group
-                    index = np.where(new_arr == 0)
-                    self.flood_fill(new_arr, index[0][0], index[1][0], group_index, 0)
-                    group_index += 1
+                    # Sort the intersection points in order of increasing x-coordinate
+                    intersections.sort()
 
-                # normalize new_arr
-                new_arr = np.where(new_arr == 1, 0, new_arr-1)
+                    # Append the occupied pixel coordinates to the list
+                    for i in range(0, len(intersections), 2):
+                        left_pixel = int(np.floor(intersections[i]))
+                        right_pixel = int(np.ceil(intersections[i + 1]))
+                        for x in range(left_pixel, right_pixel):
+                            if self.DATA[x, y-1] == 0:
+                                hole_data[x, y-1] = 1
 
-                # calculate outlines for holes
+                hole_groups = label(hole_data, connectivity=2)
+
                 hole_outlines = []
-                for i in np.unique(new_arr):
+                # calculate outlines for holes
+                for i in np.unique(hole_groups):
                     if i != 0:
-                        # create new list
-                        hole = np.where(new_arr == i, 1, 0)
-                        index = np.where(hole == 1)
+                        # generate specific map
+                        group = np.pad(np.where(hole_groups == i, 1, 0), pad_width=1, mode="constant")
+                        idx = np.where(hole_groups == i)
 
-                        hole_outlines.append(self.calc_outline(hole, index[0][0]-1, index[1][0]-1))
+                        # calculate outline
+                        hole_outlines.append(self.__calc_outline(group, idx[0][0], idx[1][0]))
+                
+                for out in hole_outlines:
+                    closest_dis = [-1, float("inf")]
+                    # insert holes to polygon
+                    for i, pos in enumerate(corners):
+                        if pos[0] <= out[0][0] and pos[1] <= out[0][1] and sqrt((pos[0]-out[0][0])**2+(pos[1]-out[0][1])**2) < closest_dis[1]:
+                            closest_dis = [i, sqrt((pos[0]-out[0][0])**2+(pos[1]-out[0][1])**2)]
 
-                corners = self.calc_outline(group, idx[0][0], idx[1][0])
+                    out = [corners[closest_dis[0]]]+out+[out[0]]
+                    out.reverse()
+                    corners[closest_dis[0]+1:closest_dis[0]+1] = out
 
-                # find connection point for hole
-                dis_indexes = (None, None)
-                dis = float("inf")
-                for outline in hole_outlines:
-                    for i1, p1 in enumerate(outline):
-                        for i2, p2 in enumerate(corners):
-                            if sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2) < dis:
-                                dis = sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
-                                dis_indexes = (i1, i2)
-
-                    # add infill to polygon corners
-                    new_list = outline[dis_indexes[0]:]+outline[:dis_indexes[0]]
-                    new_list.reverse()
-                    new_list.append(new_list[0])
-                    corners[dis_indexes[1]:dis_indexes[1]] = [corners[dis_indexes[1]]]+new_list
-
-                # add corners to list
-                if str(i) in self.polygons:
-                    self.polygons[str(i)] = [(i[0] * self.box_size + self.x, i[1] * self.box_size + self.y) for i in corners]
+                # add corners and color to list
+                if str(group_index) in self.polygons:
+                    self.polygons[str(group_index)] = [(round(i[0] * self.box_size + self.x), round(i[1] * self.box_size + self.y)) for i in corners]
+                    self.polygon_color[str(group_index)] = self.colors[round(self.DATA[group_idx[0][0], group_idx[1][0]])-1]
                 else:
-                    self.polygons.update(
-                        {str(i): [(i[0] * self.box_size + self.x, i[1] * self.box_size + self.y) for i in corners]})
+                    self.polygons.update({str(group_index): [(round(i[0] * self.box_size + self.x), round(i[1] * self.box_size + self.y)) for i in corners]})
+                    self.polygon_color.update({str(group_index): self.colors[round(self.DATA[group_idx[0][0], group_idx[1][0]])-1]})
 
+    @staticmethod
     # find outline
-    def calc_outline(self, arr, x: int, y: int):
+    def __calc_outline(arr, x: int, y: int):
         corners = [(x, y)]
         pos = [x, y+1]
         start = [x, y]
         prev_movement = [0, 1]
-
-        print(arr[start[0]: start[0]+2, start[1]: start[1]+2])
 
         while True:
             if pos != start:
@@ -244,31 +199,68 @@ class Data(object):
 
         return corners
 
-    # flood fill
-    def flood_fill(self, arr, x: int, y: int, new_val: int, old_val: int):
-        if old_val is None:
-            old_val = arr[x, y]
-
-        if old_val == new_val:
-            return
-
-        arr[x, y] = new_val
-
-        if x > 0 and arr[x - 1, y] == old_val:
-            self.flood_fill(arr, x - 1, y, new_val, old_val)
-        if x < arr.shape[0] - 1 and arr[x + 1, y] == old_val:
-            self.flood_fill(arr, x + 1, y, new_val, old_val)
-        if y > 0 and arr[x, y - 1] == old_val:
-            self.flood_fill(arr, x, y - 1, new_val, old_val)
-        if y < arr.shape[1] - 1 and arr[x, y + 1] == old_val:
-            self.flood_fill(arr, x, y + 1, new_val, old_val)
-
+    # draw on screen
     def draw(self):
+        # clear unnecessary polygons
+        for key, value in self.canvas_objects.items():
+            if key not in self.polygons:
+                value.clear()
+
         for key, value in self.polygons.items():
 
+            # update polygon corners
             if key not in self.canvas_objects:
                 self.canvas_objects.update({key: Advanced_Polygon(self.canvas, value, (0, 0, 0))})
+                self.canvas_objects[key].set_color(self.polygon_color[key])
+                # set new canvas object to background
+                if self.background:
+                    self.canvas_objects[key].set_to_background(True)
+                elif self.foreground:
+                    self.canvas_objects[key].set_to_foreground(True)
             else:
                 self.canvas_objects[key].set_pos(value)
+                self.canvas_objects[key].set_color(self.polygon_color[key])
 
+            # draw
             self.canvas_objects[key].draw()
+
+    # set position
+    def set_pos(self, x: int, y: int):
+        # delta
+        delta_x, delta_y = x-self.x, y-self.y
+
+        # update class variables
+        self.x = x
+        self.y = y
+
+        # update positions
+        for key, value in self.polygons.items():
+            self.polygons[key] = [(i[0]+delta_x, i[1]+delta_y) for i in value]
+
+        # update positions
+        for key, value in self.canvas_objects.items():
+            value.set_pos(self.polygons[key])
+
+    # set box_size
+    def set_box_size(self, box_size: int):
+        # update class variable
+        self.box_size = box_size
+
+        # calculate polygons
+        self.calc_polygon()
+
+    # set to background
+    def set_to_background(self, forever=False):
+        for key, value in self.canvas_objects.items():
+            value.set_to_background(forever)
+
+        self.foreground = False if forever else self.foreground
+        self.background = forever
+
+    # set to foreground
+    def set_to_foreground(self, forever=False):
+        for key, value in self.canvas_objects.items():
+            value.set_to_background(forever)
+
+        self.foreground = forever
+        self.background = False if forever else self.background
