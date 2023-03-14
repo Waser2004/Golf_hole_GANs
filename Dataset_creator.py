@@ -78,30 +78,42 @@ class GUI(object):
         self.new_img_height = None
 
         self.label_tool = None
+        self.rubber = False
+        self.flood_fill = False
+        self.fade = False
         self.colors = [(25, 250, 100), (25, 200, 50), (25, 200, 25), (25, 150, 25), (25, 100, 25), (240, 240, 25), (25, 50, 25), (100, 100, 255), (255, 255, 255), (110, 110, 110)]
 
+        # working tools
+        self.tools_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+187, self.WINDOW_SIZE[1]-75, 150, 50, None, (240, 240, 240), 6)
+        self.rubber_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+187, self.WINDOW_SIZE[1]-75, 50, 50, None, (240, 240, 240), 6)
+        self.rubber_img = Advanced_Image(self.canvas, self.WINDOW_SIZE[0]//2+212, self.WINDOW_SIZE[1]-50, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png", anchor="center")
+        self.flood_fill_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+237, self.WINDOW_SIZE[1]-75, 50, 50, None, (240, 240, 240), 6)
+        self.flood_fill_img = Advanced_Image(self.canvas, self.WINDOW_SIZE[0]//2+262, self.WINDOW_SIZE[1]-50, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png", anchor="center")
+        self.fade_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+287, self.WINDOW_SIZE[1]-75, 50, 50, None, (240, 240, 240), 6)
+        self.fade_img = Advanced_Image(self.canvas, self.WINDOW_SIZE[0]//2+312, self.WINDOW_SIZE[1]-50, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png", anchor="center")
+
         # label fields
-        self.label_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-250, self.WINDOW_SIZE[1]//2-75, 500, 50, None, (240, 240, 240), 6)
-        self.label_green = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-245, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[0], (240, 240, 240), 2)
-        self.label_green_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-225, self.WINDOW_SIZE[1]//2-50, "green", (0, 0, 0), self.F3, "center")
-        self.label_tee = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-195, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[1], (240, 240, 240), 2)
-        self.label_tee_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-175, self.WINDOW_SIZE[1]//2-50, "tee", (0, 0, 0), self.F3, "center")
-        self.label_fairway = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-145, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[2], (240, 240, 240), 2)
-        self.label_fairway_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-125, self.WINDOW_SIZE[1]//2-50, "fairway", (0, 0, 0), self.F3, "center")
-        self.label_srough = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-95, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[3], (240, 240, 240), 2)
-        self.label_srough_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-75, self.WINDOW_SIZE[1]//2-50, "semi\nrough", (0, 0, 0), self.F3, "center")
-        self.label_hrough = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-45, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[4], (240, 240, 240), 2)
-        self.label_hrough_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-25, self.WINDOW_SIZE[1]//2-50, "high\nrough", (0, 0, 0), self.F3, "center")
-        self.label_bunker = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+5, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[5], (240, 240, 240), 2)
-        self.label_bunker_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+25, self.WINDOW_SIZE[1]//2-50, "bunker", (0, 0, 0), self.F3, "center")
-        self.label_forest = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+55, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[6], (240, 240, 240), 2)
-        self.label_forest_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+75, self.WINDOW_SIZE[1]//2-50, "forest", (0, 0, 0), self.F3, "center")
-        self.label_water = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+105, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[7], (240, 240, 240), 2)
-        self.label_water_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+25, self.WINDOW_SIZE[1]//2-50, "water", (0, 0, 0), self.F3, "center")
-        self.label_out = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0] // 2 + 155, self.WINDOW_SIZE[1] // 2 - 70, 40, 40, self.colors[8], (240, 240, 240), 2)
-        self.label_out_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0] // 2 + 25, self.WINDOW_SIZE[1] // 2 - 50, "out", (0, 0, 0), self.F3, "center")
-        self.label_path = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0] // 2 + 205, self.WINDOW_SIZE[1] // 2 - 70, 40, 40, self.colors[9], (240, 240, 240), 2)
-        self.label_path_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0] // 2 + 25, self.WINDOW_SIZE[1] // 2 - 50, "path", (0, 0, 0), self.F3, "center")
+        self.label_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-250-87, self.WINDOW_SIZE[1]//2-75, 500, 50, None, (240, 240, 240), 6)
+        self.label_green = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-245-87, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[0], (240, 240, 240), 2)
+        self.label_green_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-225-87, self.WINDOW_SIZE[1]//2-50, "green", (0, 0, 0), self.F3, "center")
+        self.label_tee = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-195-87, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[1], (240, 240, 240), 2)
+        self.label_tee_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-175-87, self.WINDOW_SIZE[1]//2-50, "tee", (0, 0, 0), self.F3, "center")
+        self.label_fairway = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-145-87, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[2], (240, 240, 240), 2)
+        self.label_fairway_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-125-87, self.WINDOW_SIZE[1]//2-50, "fairway", (0, 0, 0), self.F3, "center")
+        self.label_srough = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-95-87, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[3], (240, 240, 240), 2)
+        self.label_srough_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-75-87, self.WINDOW_SIZE[1]//2-50, "semi\nrough", (0, 0, 0), self.F3, "center")
+        self.label_hrough = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-45-87, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[4], (240, 240, 240), 2)
+        self.label_hrough_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-25-87, self.WINDOW_SIZE[1]//2-50, "high\nrough", (0, 0, 0), self.F3, "center")
+        self.label_bunker = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+5-87, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[5], (240, 240, 240), 2)
+        self.label_bunker_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+25-87, self.WINDOW_SIZE[1]//2-50, "bunker", (0, 0, 0), self.F3, "center")
+        self.label_forest = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+55-87, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[6], (240, 240, 240), 2)
+        self.label_forest_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+75-87, self.WINDOW_SIZE[1]//2-50, "forest", (0, 0, 0), self.F3, "center")
+        self.label_water = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+105-87, self.WINDOW_SIZE[1]//2-70, 40, 40, self.colors[7], (240, 240, 240), 2)
+        self.label_water_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2+25-87, self.WINDOW_SIZE[1]//2-50, "water", (0, 0, 0), self.F3, "center")
+        self.label_out = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0] // 2 + 155-87, self.WINDOW_SIZE[1] // 2 - 70, 40, 40, self.colors[8], (240, 240, 240), 2)
+        self.label_out_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0] // 2 + 25-87, self.WINDOW_SIZE[1] // 2 - 50, "out", (0, 0, 0), self.F3, "center")
+        self.label_path = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0] // 2 + 205-87, self.WINDOW_SIZE[1] // 2 - 70, 40, 40, self.colors[9], (240, 240, 240), 2)
+        self.label_path_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0] // 2 + 25-87, self.WINDOW_SIZE[1] // 2 - 50, "path", (0, 0, 0), self.F3, "center")
 
         # shift
         self.shift = 0
@@ -148,6 +160,15 @@ class GUI(object):
 
         # draw map
         self.map.draw()
+
+        # draw drawing tools
+        self.tools_back.draw()
+        self.rubber_back.draw()
+        self.rubber_img.draw()
+        self.flood_fill_back.draw()
+        self.flood_fill_img.draw()
+        self.fade_back.draw()
+        self.fade_img.draw()
 
         # draw labeling components
         self.label_back.draw()
@@ -248,7 +269,8 @@ class GUI(object):
             self.map.set_line_pos(f"hor: {i}", pos[0]+delta, pos[1], pos[2]+delta, pos[3])
 
         # add shift to polygon map
-        self.map.polygon_map["hole_map"].set_pos(self.map.polygon_map["hole_map"].x+delta*self.map.zoom, self.map.polygon_map["hole_map"].y)
+        pos = self.map.polygon_map_info["hole_map"]
+        self.map.set_polygon_map_pos("hole_map", pos[0]+delta, pos[1])
 
     # next button
     def next_button_press(self):
@@ -326,7 +348,7 @@ class GUI(object):
         # save button
         elif self.save_but.is_pressed(event):
             if self.label_status != "labeling":
-                self.set_notification("The labeling has to be complete to save the file")
+                self.set_notification("Label the image before saving it!")
             else:
                 pass  # save as a file
 
@@ -348,8 +370,8 @@ class GUI(object):
             elif self.label_status == "Select Ending-point":
                 self.set_notification("The next step is to select the ending point by clicking on the image")
             # next step define length
-            elif self.label_status == "Select Length":
-                self.set_notification("The next step is to define the length by typing it in to the entry in the popup")
+            elif self.label_status == "shift":
+                self.set_notification("The next step is to move the labeling gird left or right by using the arrow keys to position it for labeling")
             # next step labeling the image
             elif self.label_status == "labeling":
                 self.set_notification("The next step is to label the image by clicking on the screen")
@@ -411,6 +433,72 @@ class GUI(object):
 
             self.button_pressed = True
 
+        # rubber
+        elif self.rubber_back.is_pressed(event):
+            # turn off
+            if self.rubber:
+                self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png")
+                self.rubber = False
+            # turn on
+            else:
+                self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_active.png")
+                self.rubber = True
+
+                # deactivate other tools
+                if self.flood_fill:
+                    self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
+                    self.flood_fill = False
+
+                if self.fade:
+                    self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png")
+                    self.fade = False
+
+            self.button_pressed = True
+
+        # flood fill
+        elif self.flood_fill_back.is_pressed(event):
+            # turn off
+            if self.flood_fill:
+                self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
+                self.flood_fill = False
+            # turn on
+            else:
+                self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_active.png")
+                self.flood_fill = True
+
+                # deactivate other tools
+                if self.rubber:
+                    self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png")
+                    self.rubber = False
+
+                if self.fade:
+                    self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png")
+                    self.fade = False
+
+            self.button_pressed = True
+
+        # fade
+        elif self.fade_back.is_pressed(event):
+            # turn off
+            if self.fade:
+                self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png")
+                self.fade = False
+            # turn on
+            else:
+                self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_active.png")
+                self.fade = True
+
+                # deactivate other tools
+                if self.rubber:
+                    self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png")
+                    self.rubber = False
+
+                if self.flood_fill:
+                    self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
+                    self.flood_fill = False
+
+            self.button_pressed = True
+
     def buttonrelease_1(self, event):
         self.map.buttonrelease_1(event)
 
@@ -450,13 +538,17 @@ class GUI(object):
                     self.set_notification("Please select a labeling tool to continue")
 
                 else:
-                    x_index = floor((self.map.get_click_pos(event)[0]+self.new_img_width//2)*self.ratio/3)
+                    x_index = floor((self.map.get_click_pos(event)[0]-self.shift+self.new_img_width//2)*self.ratio/3)
                     y_index = floor((self.map.get_click_pos(event)[1]+self.new_img_height//2)*self.ratio/3)
 
-                    if 0 <= x_index <= 66 and 0 <= y_index <= 199:
-                        # change existing one
-                        if self.label_tool is not None:
-                            self.map.polygon_map["hole_map"].set_index(x_index, y_index, self.label_tool)
+                    if self.flood_fill:
+                        self.map.polygon_map["hole_map"].flood_fill((x_index, y_index), self.label_tool)
+
+                    else:
+                        if 0 <= x_index <= 66 and 0 <= y_index <= 199:
+                            # change existing one
+                            if self.label_tool is not None:
+                                self.map.polygon_map["hole_map"].set_index(x_index, y_index, -1 if self.rubber else self.label_tool, self.fade)
 
         self.button_pressed = False
 
@@ -485,28 +577,37 @@ class GUI(object):
             self.notification_back.set_pos(self.WINDOW_SIZE[0]//2-self.F2.measure(self.notification)//2-10, 85)
             self.notification_text.set_pos(self.WINDOW_SIZE[0]//2, 97)
 
+        # re place drawing tools
+        self.tools_back.set_pos(self.WINDOW_SIZE[0]//2+187, self.WINDOW_SIZE[1]-75)
+        self.rubber_back.set_pos(self.WINDOW_SIZE[0]//2+187, self.WINDOW_SIZE[1]-75)
+        self.rubber_img.set_pos(self.WINDOW_SIZE[0]//2+212, self.WINDOW_SIZE[1]-50)
+        self.flood_fill_back.set_pos(self.WINDOW_SIZE[0]//2+237, self.WINDOW_SIZE[1]-75)
+        self.flood_fill_img.set_pos(self.WINDOW_SIZE[0]//2+262, self.WINDOW_SIZE[1]-50)
+        self.fade_back.set_pos(self.WINDOW_SIZE[0]//2+287, self.WINDOW_SIZE[1]-75)
+        self.fade_img.set_pos(self.WINDOW_SIZE[0]//2+312, self.WINDOW_SIZE[1]-50)
+
         # re place labeling components
-        self.label_back.set_pos(self.WINDOW_SIZE[0]//2-250, self.WINDOW_SIZE[1]-75)
-        self.label_green.set_pos(self.WINDOW_SIZE[0]//2-245, self.WINDOW_SIZE[1]-70)
-        self.label_tee.set_pos(self.WINDOW_SIZE[0]//2-195, self.WINDOW_SIZE[1]-70)
-        self.label_fairway.set_pos(self.WINDOW_SIZE[0]//2-145, self.WINDOW_SIZE[1]-70)
-        self.label_srough.set_pos(self.WINDOW_SIZE[0]//2-95, self.WINDOW_SIZE[1]-70)
-        self.label_hrough.set_pos(self.WINDOW_SIZE[0]//2-45, self.WINDOW_SIZE[1]-70)
-        self.label_bunker.set_pos(self.WINDOW_SIZE[0]//2+5, self.WINDOW_SIZE[1]-70)
-        self.label_forest.set_pos(self.WINDOW_SIZE[0]//2+55, self.WINDOW_SIZE[1]-70)
-        self.label_water.set_pos(self.WINDOW_SIZE[0]//2+105, self.WINDOW_SIZE[1]-70)
-        self.label_out.set_pos(self.WINDOW_SIZE[0]//2+155, self.WINDOW_SIZE[1]-70)
-        self.label_path.set_pos(self.WINDOW_SIZE[0]//2+205, self.WINDOW_SIZE[1]-70)
-        self.label_green_txt.set_pos(self.WINDOW_SIZE[0]//2-225, self.WINDOW_SIZE[1]-50)
-        self.label_tee_txt.set_pos(self.WINDOW_SIZE[0]//2-175, self.WINDOW_SIZE[1]-50)
-        self.label_fairway_txt.set_pos(self.WINDOW_SIZE[0]//2-125, self.WINDOW_SIZE[1]-50)
-        self.label_srough_txt.set_pos(self.WINDOW_SIZE[0]//2-75, self.WINDOW_SIZE[1]-50)
-        self.label_hrough_txt.set_pos(self.WINDOW_SIZE[0]//2-25, self.WINDOW_SIZE[1]-50)
-        self.label_bunker_txt.set_pos(self.WINDOW_SIZE[0]//2+25, self.WINDOW_SIZE[1]-50)
-        self.label_forest_txt.set_pos(self.WINDOW_SIZE[0]//2+75, self.WINDOW_SIZE[1]-50)
-        self.label_water_txt.set_pos(self.WINDOW_SIZE[0]//2+125, self.WINDOW_SIZE[1]-50)
-        self.label_out_txt.set_pos(self.WINDOW_SIZE[0]//2+175, self.WINDOW_SIZE[1]-50)
-        self.label_path_txt.set_pos(self.WINDOW_SIZE[0]//2+225, self.WINDOW_SIZE[1]-50)
+        self.label_back.set_pos(self.WINDOW_SIZE[0]//2-250-87, self.WINDOW_SIZE[1]-75)
+        self.label_green.set_pos(self.WINDOW_SIZE[0]//2-245-87, self.WINDOW_SIZE[1]-70)
+        self.label_tee.set_pos(self.WINDOW_SIZE[0]//2-195-87, self.WINDOW_SIZE[1]-70)
+        self.label_fairway.set_pos(self.WINDOW_SIZE[0]//2-145-87, self.WINDOW_SIZE[1]-70)
+        self.label_srough.set_pos(self.WINDOW_SIZE[0]//2-95-87, self.WINDOW_SIZE[1]-70)
+        self.label_hrough.set_pos(self.WINDOW_SIZE[0]//2-45-87, self.WINDOW_SIZE[1]-70)
+        self.label_bunker.set_pos(self.WINDOW_SIZE[0]//2+5-87, self.WINDOW_SIZE[1]-70)
+        self.label_forest.set_pos(self.WINDOW_SIZE[0]//2+55-87, self.WINDOW_SIZE[1]-70)
+        self.label_water.set_pos(self.WINDOW_SIZE[0]//2+105-87, self.WINDOW_SIZE[1]-70)
+        self.label_out.set_pos(self.WINDOW_SIZE[0]//2+155-87, self.WINDOW_SIZE[1]-70)
+        self.label_path.set_pos(self.WINDOW_SIZE[0]//2+205-87, self.WINDOW_SIZE[1]-70)
+        self.label_green_txt.set_pos(self.WINDOW_SIZE[0]//2-225-87, self.WINDOW_SIZE[1]-50)
+        self.label_tee_txt.set_pos(self.WINDOW_SIZE[0]//2-175-87, self.WINDOW_SIZE[1]-50)
+        self.label_fairway_txt.set_pos(self.WINDOW_SIZE[0]//2-125-87, self.WINDOW_SIZE[1]-50)
+        self.label_srough_txt.set_pos(self.WINDOW_SIZE[0]//2-75-87, self.WINDOW_SIZE[1]-50)
+        self.label_hrough_txt.set_pos(self.WINDOW_SIZE[0]//2-25-87, self.WINDOW_SIZE[1]-50)
+        self.label_bunker_txt.set_pos(self.WINDOW_SIZE[0]//2+25-87, self.WINDOW_SIZE[1]-50)
+        self.label_forest_txt.set_pos(self.WINDOW_SIZE[0]//2+75-87, self.WINDOW_SIZE[1]-50)
+        self.label_water_txt.set_pos(self.WINDOW_SIZE[0]//2+125-87, self.WINDOW_SIZE[1]-50)
+        self.label_out_txt.set_pos(self.WINDOW_SIZE[0]//2+175-87, self.WINDOW_SIZE[1]-50)
+        self.label_path_txt.set_pos(self.WINDOW_SIZE[0]//2+225-87, self.WINDOW_SIZE[1]-50)
 
         # re place map center
         self.map.set_center(self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2)
@@ -535,24 +636,32 @@ class GUI(object):
             # start and end map pos
             start = self.map.get_click_pos(None, pos=(self.last_x, self.last_y))
             end = self.map.get_click_pos(event)
+            
+            # food fill
+            if self.flood_fill:
+                x_index = floor((end[0]-self.shift+self.new_img_width//2)*self.ratio/3)
+                y_index = floor((end[1]+self.new_img_height//2)*self.ratio/3)
 
-            # calculate cursor movement variables
-            delta_x = start[0]-end[0]
-            delta_y = start[1]-end[1]
-            steps = round(sqrt(delta_x**2+delta_y**2)/round(3/self.ratio))+1
+                self.map.polygon_map["hole_map"].flood_fill((x_index, y_index), self.label_tool)
 
-            for i in range(steps):
-                # calculate intermediate x, y positions
-                x = end[0] + delta_x / steps * i
-                y = end[1] + delta_y / steps * i
+            else:
+                # calculate cursor movement variables
+                delta_x = start[0]-end[0]
+                delta_y = start[1]-end[1]
+                steps = round(sqrt(delta_x**2+delta_y**2)/round(3/self.ratio))+1
 
-                x_index = floor((x + self.new_img_width // 2) * self.ratio / 3)
-                y_index = floor((y + self.new_img_height // 2) * self.ratio / 3)
+                for i in range(steps):
+                    # calculate intermediate x, y positions
+                    x = end[0] + delta_x / steps * i
+                    y = end[1] + delta_y / steps * i
 
-                if 0 <= x_index <= 66 and 0 <= y_index <= 199:
-                    # change existing one
-                    if self.label_tool is not None:
-                        self.map.polygon_map["hole_map"].set_index(x_index, y_index, self.label_tool)
+                    x_index = floor((x - self.shift + self.new_img_width // 2) * self.ratio / 3)
+                    y_index = floor((y + self.new_img_height // 2) * self.ratio / 3)
+
+                    if 0 <= x_index <= 66 and 0 <= y_index <= 199:
+                        # change existing one
+                        if self.label_tool is not None:
+                            self.map.polygon_map["hole_map"].set_index(x_index, y_index, -1 if self.rubber else self.label_tool, self.fade)
 
         self.last_x = event.x
         self.last_y = event.y
@@ -563,8 +672,69 @@ class GUI(object):
 
     # key event
     def key(self, event):
+        # next button press
         if event.char == "n":
             self.next_button_press()
+
+        # rubber
+        if event.char == "c":
+            # turn off
+            if self.rubber:
+                self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png")
+                self.rubber = False
+            # turn on
+            else:
+                self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_active.png")
+                self.rubber = True
+
+                # deactivate other tools
+                if self.flood_fill:
+                    self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
+                    self.flood_fill = False
+                
+                if self.fade:
+                    self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png")
+                    self.fade = False
+
+        # flood fill
+        if event.char == "v":
+            # turn off
+            if self.flood_fill:
+                self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
+                self.flood_fill = False
+            # turn on
+            else:
+                self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_active.png")
+                self.flood_fill = True
+                
+                # deactivate other tools
+                if self.rubber:
+                    self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png")
+                    self.rubber = False
+                    
+                if self.fade:
+                    self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png")
+                    self.fade = False
+        
+        # fade
+        if event.char == "f":
+            # turn off
+            if self.fade:
+                self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png")
+                self.fade = False
+            # turn on
+            else:
+                self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_active.png")
+                self.fade = True
+
+                # deactivate other tools
+                if self.rubber:
+                    self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png")
+                    self.rubber = False
+
+                if self.flood_fill:
+                    self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
+                    self.flood_fill = False
 
     # left arrow
     def left(self, event):

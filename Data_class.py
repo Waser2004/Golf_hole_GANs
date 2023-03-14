@@ -1,9 +1,11 @@
 import numpy as np
 import tkinter as tk
+from tkinter.font import Font
 from math import sqrt
 from skimage.measure import label
+from queue import Queue
 
-from Advanced_Canvas import Advanced_Polygon
+from Advanced_Canvas import Advanced_Polygon, Advanced_Text
 
 
 class Data(object):
@@ -14,6 +16,7 @@ class Data(object):
         self.box_size = box_size
         self.DATA = np.zeros(shape)
         self.GROUPS = np.zeros(shape)
+        self.FADE = np.zeros(shape)
 
         self.foreground = False
         self.background = False
@@ -22,18 +25,34 @@ class Data(object):
         self.polygons = {}
         self.polygon_color = {}
 
+        self.font = Font(family="Arial", size=10)
+        self.labels = {}
+
         self.canvas_objects = {}
 
     # change an index of data
-    def set_index(self, x: int, y: int, new_index: int):
+    def set_index(self, x: int, y: int, new_index: int, fade: bool = False):
         assert 0 <= x <= self.DATA.shape[0] and 0 <= y <= self.DATA.shape[1], f"{x}, {y} location does not exist"
         assert 0 <= new_index+1 <= len(self.colors), "index is not in range of colors"
+
+        # remove fade
+        if (new_index+1 == 0 and self.FADE[x, y] == 1) or (not fade and self.FADE[x, y] == 1):
+            self.labels[f"{x}, {y}"].clear()
+            self.labels.pop(f"{x}, {y}")
+
+            self.FADE[x, y] = 0
+
+        # add fade
+        if fade:
+            if f"{x}, {y}" not in self.labels:
+                self.FADE[x, y] = 1
+                self.labels.update({f"{x}, {y}": Advanced_Text(self.canvas, round(self.x+x*self.box_size+self.box_size/2), round(self.y+y*self.box_size+self.box_size/2), "F", (150, 150, 150), self.font, anchor="center")})
 
         # change color of pixel
         self.DATA[x, y] = new_index+1
 
         # group the array
-        self.GROUPS = label(self.DATA, connectivity=2)
+        self.GROUPS = label(self.DATA, connectivity=1)
 
         # calculate the polygon structure
         self.calc_polygon()
@@ -78,7 +97,7 @@ class Data(object):
                         left_pixel = int(np.floor(intersections[i]))
                         right_pixel = int(np.ceil(intersections[i + 1]))
                         for x in range(left_pixel, right_pixel):
-                            if self.DATA[x, y-1] == 0:
+                            if group[x+1, y] == 0:
                                 hole_data[x, y-1] = 1
 
                 hole_groups = label(hole_data, connectivity=2)
@@ -199,12 +218,53 @@ class Data(object):
 
         return corners
 
+    # flood fill
+    def flood_fill(self, start_pos, fill_value):
+        q = Queue()
+        q.put(start_pos)
+        orig_value = self.DATA[start_pos[0], start_pos[1]]
+        visited = set()
+
+        while not q.empty():
+            x, y = q.get()
+            if (x, y) in visited:
+                continue
+            visited.add((x, y))
+            if self.DATA[x, y] == orig_value:
+                self.DATA[x, y] = len(self.colors)+1
+                if x > 0:
+                    q.put((x - 1, y))
+                if x < self.DATA.shape[0] - 1:
+                    q.put((x + 1, y))
+                if y > 0:
+                    q.put((x, y - 1))
+                if y < self.DATA.shape[1] - 1:
+                    q.put((x, y + 1))
+
+        self.DATA = np.where(self.DATA == len(self.colors)+1, fill_value+1, self.DATA)
+
+        # update polygons
+        self.GROUPS = label(self.DATA, connectivity=1)
+        self.calc_polygon()
+
+    # clear obsolete polygons
+    def clean_polygons(self):
+        poly_amount = len(np.unique(self.GROUPS))-1
+        # only clear if current polygon amount is bigger than necessary polygon amount
+        if len(self.polygons) > poly_amount:
+            for i in range(len(self.polygons)-poly_amount):
+                i += poly_amount+1
+                # clear from polygon list
+                self.polygons.pop(f"{i}")
+                # clear from canvas
+                if str(i) in self.canvas_objects:
+                    self.canvas_objects[f"{i}"].clear()
+                    self.canvas_objects.pop(f"{i}")
+
     # draw on screen
     def draw(self):
         # clear unnecessary polygons
-        for key, value in self.canvas_objects.items():
-            if key not in self.polygons:
-                value.clear()
+        self.clean_polygons()
 
         for key, value in self.polygons.items():
 
@@ -224,6 +284,10 @@ class Data(object):
             # draw
             self.canvas_objects[key].draw()
 
+        # draw fade labels
+        for key, value in self.labels.items():
+            value.draw()
+
     # set position
     def set_pos(self, x: int, y: int):
         # delta
@@ -237,6 +301,11 @@ class Data(object):
         for key, value in self.polygons.items():
             self.polygons[key] = [(i[0]+delta_x, i[1]+delta_y) for i in value]
 
+        # update label_pos
+        for key, value in self.labels.items():
+            x_pos, y_pos = int(key.replace(" ", "").split(",")[0]), int(key.replace(" ", "").split(",")[1])
+            value.set_pos(round(self.x+x_pos*self.box_size+self.box_size/2), round(self.y+y_pos*self.box_size+self.box_size/2))
+
         # update positions
         for key, value in self.canvas_objects.items():
             value.set_pos(self.polygons[key])
@@ -246,12 +315,20 @@ class Data(object):
         # update class variable
         self.box_size = box_size
 
+        # update label_pos
+        for key, value in self.labels.items():
+            x_pos, y_pos = int(key.replace(" ", "").split(",")[0]), int(key.replace(" ", "").split(",")[1])
+            value.set_pos(round(self.x+x_pos*self.box_size+self.box_size/2), round(self.y+y_pos*self.box_size+self.box_size/2))
+
         # calculate polygons
         self.calc_polygon()
 
     # set to background
     def set_to_background(self, forever=False):
         for key, value in self.canvas_objects.items():
+            value.set_to_background(forever)
+
+        for key, value in self.labels.items():
             value.set_to_background(forever)
 
         self.foreground = False if forever else self.foreground
@@ -261,6 +338,9 @@ class Data(object):
     def set_to_foreground(self, forever=False):
         for key, value in self.canvas_objects.items():
             value.set_to_background(forever)
+
+        for key, value in self.labels.items():
+            value.set_to_foreground(forever)
 
         self.foreground = forever
         self.background = False if forever else self.background
