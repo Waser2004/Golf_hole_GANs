@@ -4,6 +4,7 @@ from tkinter import filedialog
 import datetime
 import os
 from math import sqrt, floor, ceil
+import csv
 
 from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image, Advanced_Entry, Advanced_Line
 from Map import Map
@@ -215,18 +216,12 @@ class GUI(object):
 
     # prepare everything for labeling
     def prep_labeling(self):
-        
-        self.start_point_pos = [self.start_point_pos[0], self.start_point_pos[1]]
-        self.end_point_pos = [self.end_point_pos[0], self.end_point_pos[1]]
-
-        self.map.set_circle_pos("Starting Point", round(self.start_point_pos[0]), round(self.start_point_pos[1]))
-        self.map.set_circle_pos("Ending Point", round(self.end_point_pos[0]), round(self.end_point_pos[1]))
-
-        self.start_point_lab.set_text(f"Starting point: {round(self.start_point_pos[0])}, {round(self.start_point_pos[1])}")
-        self.end_point_lab.set_text(f"Ending point: {round(self.end_point_pos[0])}, {round(self.end_point_pos[1])}")
+        # clear start and end point
+        self.map.clear_circle("Starting Point")
+        self.map.clear_circle("Ending Point")
         
         # center map
-        self.map.add_offset(-self.map.x_offset, -self.map.y_offset)
+        self.map.add_offset(-self.map.x_offset, -self.map.y_offset, None, "b2")
         self.map.add_zoom(1-self.map.zoom)
 
         # get parameters for new image
@@ -304,12 +299,50 @@ class GUI(object):
         # moving on to seth shift
         elif self.label_status == "shift":
             self.label_status = "labeling"
+            self.save_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\save_icon.png")
         # labeling
         else:
             self.set_notification(
                 "You have completed all tasks and are now labeling. if your done with labeling press the save button to save it.")
 
         self.button_pressed = True
+
+    # save
+    def save(self):
+        dataset = "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Data_set\\Dataset.csv"
+        with open(dataset, "r") as file:
+            reader = csv.reader(file)
+            
+            starting_point = (self.map.images["Hole"].get_size()[0]/2+self.start_point_pos[0], self.map.images["Hole"].get_size()[1]/2+self.start_point_pos[1])
+            ending_point = (self.map.images["Hole"].get_size()[0]/2+self.end_point_pos[0], self.map.images["Hole"].get_size()[1]/2+self.end_point_pos[1])
+
+            saved = False
+            rows = []
+            for row in reader:
+                # overwrite data if datapoint already exists
+                if row[0] == os.path.basename(self.file_path)[0:6]:
+                    row[1] = self.map.polygon_map["hole_map"].DATA
+                    row[2] = self.map.polygon_map["hole_map"].FADE
+                    row[3] = starting_point
+                    row[4] = ending_point
+                    row[5] = self.distance
+
+                    saved = True
+
+                rows.append(row)
+
+            # save changed values
+            if saved:
+                with open(dataset, 'w', newline='') as file:
+                    # Create a writer object and save
+                    writer = csv.writer(file)
+                    writer.writerows(rows)
+
+            else:
+                # create a writer object and save in a new line
+                with open(dataset, 'a', newline='') as write_file:
+                    writer = csv.writer(write_file)
+                    writer.writerow([os.path.basename(self.file_path)[0:6], self.map.polygon_map["hole_map"].DATA, self.map.polygon_map["hole_map"].FADE, starting_point, ending_point, self.distance])
 
     # left click
     def button_1(self, event):
@@ -323,6 +356,26 @@ class GUI(object):
             file = filedialog.askopenfilename(initialdir="D:\\Golf_course_IMGs")
 
             if file != "":
+                # reset
+                if self.label_status != "Select Image":
+                    # erase from screen
+                    self.map.clear_all()
+                    self.start_point_lab.clear()
+                    self.end_point_lab.clear()
+                    self.hole_len_lab.clear()
+
+                    # reset text
+                    self.start_point_lab.set_text("Starting point:")
+                    self.end_point_lab.set_text("Ending point:")
+                    self.hole_len_lab.set_text("Hole length:")
+
+                    # reset variables
+                    self.start_point_pos = None
+                    self.end_point_pos = None
+
+                    # reset save img
+                    self.save_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\save_icon_empty.png")
+
                 # assign file path
                 self.file_path = file
 
@@ -350,7 +403,7 @@ class GUI(object):
             if self.label_status != "labeling":
                 self.set_notification("Label the image before saving it!")
             else:
-                pass  # save as a file
+                self.save()
 
             self.button_pressed = True
 

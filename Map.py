@@ -274,9 +274,92 @@ class Map(object):
 
         # set new z value
         self.order[f"P:{name}"] = z
-        self.order[f":{name}"] = z
 
         self.sort_order()
+    
+    # clear rectangle
+    def clear_rectangle(self, name: str):
+        assert name in self.rectangles, "name does not exist try an other one"
+        
+        # erase from screen
+        self.rectangles[name].clear()
+        
+        # clear rectangle information
+        self.rectangles.pop(name)
+        self.rectangles_info.pop(name)
+        
+        # clear z pos
+        self.order.pop(f"R:{name}")
+
+    # clear text
+    def clear_text(self, name: str):
+        assert name in self.texts, "name does not exist try an other one"
+
+        # erase from screen
+        self.texts[name].clear()
+
+        # clear rectangle information
+        self.texts.pop(name)
+        self.texts_info.pop(name)
+
+        # clear z pos
+        self.order.pop(f"T:{name}")
+
+    # clear image
+    def clear_image(self, name: str):
+        assert name in self.images, "name does not exist try an other one"
+
+        # erase from screen
+        self.images[name].clear()
+
+        # clear rectangle information
+        self.images.pop(name)
+        self.images_info.pop(name)
+
+        # clear z pos
+        self.order.pop(f"I:{name}")
+
+    # clear circle
+    def clear_circle(self, name: str):
+        assert name in self.circles, "name does not exist try an other one"
+
+        # erase from screen
+        self.circles[name].clear()
+
+        # clear rectangle information
+        self.circles.pop(name)
+        self.circles_info.pop(name)
+
+        # clear z pos
+        self.order.pop(f"C:{name}")
+
+    # clear line
+    def clear_line(self, name: str):
+        assert name in self.lines, "name does not exist try an other one"
+
+        # erase from screen
+        self.lines[name].clear()
+
+        # clear rectangle information
+        self.lines.pop(name)
+        self.lines_info.pop(name)
+
+        # clear z pos
+        self.order.pop(f"L:{name}")
+
+    # clear polygon map
+    def clear_polygon_map(self, name: str):
+        assert name in self.polygon_map, "name does not exist try an other one"
+
+        # erase from screen
+        self.polygon_map[name].clear()
+
+        # clear rectangle information
+        self.polygon_map.pop(name)
+        self.polygon_map_info.pop(name)
+
+        # clear z pos
+        self.order.pop(f"P:{name}")
 
     # check if circle with name exists
     def rectangle_exists(self, name: str) -> bool:
@@ -386,6 +469,40 @@ class Map(object):
         if self.zoom_slider_pos is not None:
             self.zoom_lin.draw()
             self.zoom_but.draw()
+
+    # clear everything
+    def clear_all(self):
+        # clear rectangles
+        for key, value in self.rectangles.copy().items():
+            self.clear_rectangle(key)
+
+        # clear texts
+        for key, value in self.texts.copy().items():
+            self.clear_text(key)
+
+        # clear images
+        for key, value in self.images.copy().items():
+            self.clear_image(key)
+
+        # clear circles
+        for key, value in self.circles.copy().items():
+            self.clear_circle(key)
+
+        # clear lines
+        for key, value in self.lines.copy().items():
+            if key != "X-axis" and key != "Y-axis":
+                self.clear_line(key)
+
+        # clear polygon maps
+        for key, value in self.polygon_map.copy().items():
+            self.clear_polygon_map(key)
+
+        self.polygon_map.clear()
+        self.polygon_map_info.clear()
+
+        # reset zoom/position
+        self.add_offset(-self.x_offset, -self.y_offset, None, "b2")
+        self.add_zoom(1-self.zoom)
 
     # set to background
     def set_to_background(self, forever: bool = False):

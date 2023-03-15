@@ -288,6 +288,16 @@ class Data(object):
         for key, value in self.labels.items():
             value.draw()
 
+    # clear from screen
+    def clear(self):
+        # clear from screen
+        for key, value in self.canvas_objects.copy().items():
+            value.clear()
+            self.canvas_objects.pop(key)
+
+        # delete all polygon information
+        self.polygons.clear()
+
     # set position
     def set_pos(self, x: int, y: int):
         # delta
@@ -309,6 +319,7 @@ class Data(object):
         # update positions
         for key, value in self.canvas_objects.items():
             value.set_pos(self.polygons[key])
+
 
     # set box_size
     def set_box_size(self, box_size: int):
