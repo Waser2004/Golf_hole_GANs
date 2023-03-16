@@ -3,7 +3,7 @@ from tkinter.font import Font
 from tkinter import filedialog
 import datetime
 import os
-from math import sqrt, floor, ceil
+from math import sqrt, floor
 import csv
 
 from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image, Advanced_Entry, Advanced_Line
@@ -82,6 +82,7 @@ class GUI(object):
         self.rubber = False
         self.flood_fill = False
         self.fade = False
+        self.hide = False
         self.colors = [(25, 250, 100), (25, 200, 50), (25, 200, 25), (25, 150, 25), (25, 100, 25), (240, 240, 25), (25, 50, 25), (100, 100, 255), (255, 255, 255), (110, 110, 110)]
 
         # working tools
@@ -131,6 +132,7 @@ class GUI(object):
         self.root.bind("<B2-Motion>", self.b2_motion)
         self.root.bind("<MouseWheel>", self.wheel)
         self.root.bind("<Key>", self.key)
+        self.root.bind("<KeyRelease>", self.key_release)
         self.root.bind("<Left>", self.left)
         self.root.bind("<Right>", self.right)
         self.root.bind_class("Tk", "<Configure>", self.configure)
@@ -160,7 +162,8 @@ class GUI(object):
             self.notification_time = None
 
         # draw map
-        self.map.draw()
+        if not self.hide:
+            self.map.draw()
 
         # draw drawing tools
         self.tools_back.draw()
@@ -729,6 +732,12 @@ class GUI(object):
         if event.char == "n":
             self.next_button_press()
 
+        # hide
+        if event.char == "h":
+            self.hide = True
+
+            self.map.polygon_map["hole_map"].clear()
+
         # rubber
         if event.char == "c":
             # turn off
@@ -788,6 +797,15 @@ class GUI(object):
                 if self.flood_fill:
                     self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
                     self.flood_fill = False
+
+    # key release
+    def key_release(self, event):
+        # un hide
+        if event.char == "h":
+            self.hide = False
+
+            self.map.polygon_map["hole_map"].calc_polygon()
+            self.map.polygon_map["hole_map"].draw()
 
     # left arrow
     def left(self, event):
