@@ -320,7 +320,6 @@ class Data(object):
         for key, value in self.canvas_objects.items():
             value.set_pos(self.polygons[key])
 
-
     # set box_size
     def set_box_size(self, box_size: int):
         # update class variable
@@ -333,6 +332,18 @@ class Data(object):
 
         # calculate polygons
         self.calc_polygon()
+
+    # update data
+    def update_data(self, data: np.array, fade: np.array):
+        # update class parameters
+        self.DATA = data
+        self.FADE = fade
+
+        # calculate new polygons
+        self.clear()
+        self.GROUPS = label(self.DATA, connectivity=1)
+        self.calc_polygon()
+        self.draw()
 
     # set to background
     def set_to_background(self, forever=False):

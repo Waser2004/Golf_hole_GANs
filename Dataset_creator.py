@@ -6,6 +6,8 @@ import os
 from math import sqrt, floor
 import csv
 
+import numpy as np
+
 from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image, Advanced_Entry, Advanced_Line
 from Map import Map
 
@@ -117,6 +119,16 @@ class GUI(object):
         self.label_path = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0] // 2 + 205-87, self.WINDOW_SIZE[1] // 2 - 70, 40, 40, self.colors[9], (240, 240, 240), 2)
         self.label_path_txt = Advanced_Text(self.canvas, self.WINDOW_SIZE[0] // 2 + 25-87, self.WINDOW_SIZE[1] // 2 - 50, "path", (0, 0, 0), self.F3, "center")
 
+        # undo and redo parameters
+        self.actions_list = []
+        self.actions_index = -1
+
+        # undo and redo buttons
+        self.undo_but_back = Advanced_Rectangle(self.canvas, 0, 25, 25, 25, None, (240, 240, 240), 6)
+        self.undo_but_img = Advanced_Image(self.canvas, 0, 30, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_inactive.png", "nw")
+        self.redo_but_back = Advanced_Rectangle(self.canvas, 0, 25, 25, 25, None, (240, 240, 240), 6)
+        self.redo_but_img = Advanced_Image(self.canvas, 0, 30, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_inactive.png", "nw")
+
         # shift
         self.shift = 0
 
@@ -135,6 +147,7 @@ class GUI(object):
         self.root.bind("<KeyRelease>", self.key_release)
         self.root.bind("<Left>", self.left)
         self.root.bind("<Right>", self.right)
+        self.root.bind("<Control-z>", self.control_z)
         self.root.bind_class("Tk", "<Configure>", self.configure)
 
     # window loop
@@ -160,10 +173,6 @@ class GUI(object):
             # reset
             self.notification = None
             self.notification_time = None
-
-        # draw map
-        if not self.hide:
-            self.map.draw()
 
         # draw drawing tools
         self.tools_back.draw()
@@ -196,6 +205,15 @@ class GUI(object):
         self.label_water_txt.draw()
         self.label_out_txt.draw()
         self.label_path_txt.draw()
+
+        self.undo_but_back.draw()
+        self.undo_but_img.draw()
+        self.redo_but_back.draw()
+        self.redo_but_img.draw()
+
+        # draw map
+        if not self.hide:
+            self.map.draw()
 
         self.root.after(27, self.main)
 
@@ -324,8 +342,8 @@ class GUI(object):
             for row in reader:
                 # overwrite data if datapoint already exists
                 if row[0] == os.path.basename(self.file_path)[0:6]:
-                    row[1] = self.map.polygon_map["hole_map"].DATA
-                    row[2] = self.map.polygon_map["hole_map"].FADE
+                    row[1] = self.map.polygon_map["hole_map"].DATA.tolist()
+                    row[2] = self.map.polygon_map["hole_map"].FADE.tolist()
                     row[3] = starting_point
                     row[4] = ending_point
                     row[5] = self.distance
@@ -555,6 +573,38 @@ class GUI(object):
 
             self.button_pressed = True
 
+        # redo button
+        if self.redo_but_back.is_pressed(event):
+            if self.actions_index+1 < len(self.actions_list):
+                self.actions_index += 1
+
+                # update data class
+                self.map.polygon_map["hole_map"].update_data(np.array(self.actions_list[self.actions_index][0]), np.array(self.actions_list[self.actions_index][1]))
+
+            # update images
+            if self.actions_index == len(self.actions_list)-1:
+                self.redo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_inactive.png")
+            if self.undo_but_img.src == "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_inactive.png":
+                self.undo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_active.png")
+
+            self.button_pressed = True
+
+        # undo button
+        if self.undo_but_back.is_pressed(event):
+            if self.actions_index-1 >= 0:
+                self.actions_index -= 1
+
+                # update data class
+                self.map.polygon_map["hole_map"].update_data(np.array(self.actions_list[self.actions_index][0]), np.array(self.actions_list[self.actions_index][1]))
+
+            # update images
+            if self.actions_index == 0:
+                self.undo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_inactive.png")
+            if self.redo_but_img.src == "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_inactive.png":
+                self.redo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_active.png")
+
+            self.button_pressed = True
+
     def buttonrelease_1(self, event):
         self.map.buttonrelease_1(event)
 
@@ -605,6 +655,19 @@ class GUI(object):
                             # change existing one
                             if self.label_tool is not None:
                                 self.map.polygon_map["hole_map"].set_index(x_index, y_index, -1 if self.rubber else self.label_tool, self.fade)
+
+        # add to activation list
+        if (self.map.polygon_map_exists("hole_map") and len(self.actions_list) == 0) or (self.map.polygon_map_exists("hole_map") and not self.actions_list.count([self.map.polygon_map["hole_map"].DATA.tolist(), self.map.polygon_map["hole_map"].FADE.tolist()])):
+            # remove newer states
+            if self.actions_index+1 < len(self.actions_list):
+                self.actions_list = self.actions_list[:self.actions_index+1]
+                self.redo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_inactive.png")
+
+            self.actions_list.append([self.map.polygon_map["hole_map"].DATA.tolist(), self.map.polygon_map["hole_map"].FADE.tolist()])
+            self.actions_index += 1
+
+            if self.undo_but_img.src == "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_inactive.png" and len(self.actions_list) > 1:
+                self.undo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_active.png")
 
         self.button_pressed = False
 
@@ -667,6 +730,12 @@ class GUI(object):
 
         # re place map center
         self.map.set_center(self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2)
+
+        # re place undo and redo button
+        self.undo_but_back.set_pos(self.WINDOW_SIZE[0]//2-275, self.undo_but_back.y)
+        self.undo_but_img.set_pos(self.WINDOW_SIZE[0]//2-270, self.undo_but_img.y)
+        self.redo_but_back.set_pos(self.WINDOW_SIZE[0]//2+250, self.redo_but_back.y)
+        self.redo_but_img.set_pos(self.WINDOW_SIZE[0]//2+255, self.redo_but_img.y)
 
         # map origin button and zoom slider
         self.map.set_origin_button_pos(self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]-125)
@@ -816,6 +885,20 @@ class GUI(object):
     def right(self, event):
         if self.label_status == "shift":
             self.add_shift("right", 10)
+
+    # control z
+    def control_z(self, event):
+        if self.actions_index - 1 >= 0:
+            self.actions_index -= 1
+
+            # update data class
+            self.map.polygon_map["hole_map"].update_data(np.array(self.actions_list[self.actions_index][0]), np.array(self.actions_list[self.actions_index][1]))
+
+        # update images
+        if self.actions_index == 0:
+            self.undo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_inactive.png")
+        if self.redo_but_img.src == "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_inactive.png":
+            self.redo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_active.png")
 
     # open the window
     def main_loop(self):
