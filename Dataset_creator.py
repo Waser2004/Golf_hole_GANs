@@ -54,13 +54,13 @@ class GUI(object):
         self.sel_file_text = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-75, 0, "Select Image", (0, 0, 0), self.F1)
 
         self.save_but = Advanced_Rectangle(self.canvas, 0, 25, 50, 50, (240, 240, 240), (240, 240, 240), 6)
-        self.save_img = Advanced_Image(self.canvas, 0, 50, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\save_icon_empty.png")
+        self.save_img = Advanced_Image(self.canvas, 0, 50, "Icons\\save_icon_empty.png")
 
         self.next_but = Advanced_Rectangle(self.canvas, 0, 25, 50, 50, (240, 240, 240), (240, 240, 240), 6)
-        self.next_img = Advanced_Image(self.canvas, 0, 50, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\right-arrow.png")
+        self.next_img = Advanced_Image(self.canvas, 0, 50, "Icons\\right-arrow.png")
 
         self.info_but = Advanced_Rectangle(self.canvas, 0, 25, 50, 50, (240, 240, 240), (240, 240, 240), 6)
-        self.info_img = Advanced_Image(self.canvas, 0, 50, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\info-button.png")
+        self.info_img = Advanced_Image(self.canvas, 0, 50, "Icons\\info-button.png")
 
         # label information
         self.label_status = "Select Image"
@@ -86,15 +86,6 @@ class GUI(object):
         self.fade = False
         self.hide = False
         self.colors = [(25, 250, 100), (25, 200, 50), (25, 200, 25), (25, 150, 25), (25, 100, 25), (240, 240, 25), (25, 50, 25), (100, 100, 255), (255, 255, 255), (110, 110, 110)]
-
-        # working tools
-        self.tools_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+187, self.WINDOW_SIZE[1]-75, 150, 50, None, (240, 240, 240), 6)
-        self.rubber_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+187, self.WINDOW_SIZE[1]-75, 50, 50, None, (240, 240, 240), 6)
-        self.rubber_img = Advanced_Image(self.canvas, self.WINDOW_SIZE[0]//2+212, self.WINDOW_SIZE[1]-50, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png", anchor="center")
-        self.flood_fill_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+237, self.WINDOW_SIZE[1]-75, 50, 50, None, (240, 240, 240), 6)
-        self.flood_fill_img = Advanced_Image(self.canvas, self.WINDOW_SIZE[0]//2+262, self.WINDOW_SIZE[1]-50, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png", anchor="center")
-        self.fade_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+287, self.WINDOW_SIZE[1]-75, 50, 50, None, (240, 240, 240), 6)
-        self.fade_img = Advanced_Image(self.canvas, self.WINDOW_SIZE[0]//2+312, self.WINDOW_SIZE[1]-50, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png", anchor="center")
 
         # label fields
         self.label_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-250-87, self.WINDOW_SIZE[1]//2-75, 500, 50, None, (240, 240, 240), 6)
@@ -125,9 +116,9 @@ class GUI(object):
 
         # undo and redo buttons
         self.undo_but_back = Advanced_Rectangle(self.canvas, 0, 25, 25, 25, None, (240, 240, 240), 6)
-        self.undo_but_img = Advanced_Image(self.canvas, 0, 30, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_inactive.png", "nw")
+        self.undo_but_img = Advanced_Image(self.canvas, 0, 30, "Icons\\undo_icon_inactive.png", "nw")
         self.redo_but_back = Advanced_Rectangle(self.canvas, 0, 25, 25, 25, None, (240, 240, 240), 6)
-        self.redo_but_img = Advanced_Image(self.canvas, 0, 30, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_inactive.png", "nw")
+        self.redo_but_img = Advanced_Image(self.canvas, 0, 30, "Icons\\redo_icon_inactive.png", "nw")
 
         # shift
         self.shift = 0
@@ -145,8 +136,6 @@ class GUI(object):
         self.root.bind("<MouseWheel>", self.wheel)
         self.root.bind("<Key>", self.key)
         self.root.bind("<KeyRelease>", self.key_release)
-        self.root.bind("<Left>", self.left)
-        self.root.bind("<Right>", self.right)
         self.root.bind("<Control-z>", self.control_z)
         self.root.bind_class("Tk", "<Configure>", self.configure)
 
@@ -173,15 +162,6 @@ class GUI(object):
             # reset
             self.notification = None
             self.notification_time = None
-
-        # draw drawing tools
-        self.tools_back.draw()
-        self.rubber_back.draw()
-        self.rubber_img.draw()
-        self.flood_fill_back.draw()
-        self.flood_fill_img.draw()
-        self.fade_back.draw()
-        self.fade_img.draw()
 
         # draw labeling components
         self.label_back.draw()
@@ -247,16 +227,6 @@ class GUI(object):
 
         # get parameters for new image
         self.ratio = self.distance/sqrt((self.start_point_pos[0]-self.end_point_pos[0])**2+(self.start_point_pos[1]-self.end_point_pos[1])**2)
-        self.new_img_width = round(201/self.ratio)
-        self.new_img_height = round(600/self.ratio)
-
-        box_size = 3
-        for i in range(round(201/box_size)+1):
-            self.map.add_line(f"vert: {i}", -self.new_img_width//2+(i*box_size/self.ratio), -self.new_img_height//2, -self.new_img_width//2+(i*box_size/self.ratio), +self.new_img_height//2, 1, (60, 60, 60), True)
-        for i in range(round(600/box_size)+1):
-            self.map.add_line(f"hor: {i}", -self.new_img_width//2, -self.new_img_height//2+(i*box_size/self.ratio), +self.new_img_width//2, -self.new_img_height//2+(i*box_size/self.ratio), 1, (60, 60, 60), True)
-
-        self.map.add_polygon_map("hole_map", -self.new_img_width//2, -self.new_img_height//2, (box_size/self.ratio), (67, 200), self.colors)
 
     # undo tool highlighting
     def undo_highlight(self):
@@ -270,23 +240,6 @@ class GUI(object):
         self.label_water.set_color((240, 240, 240), self.label_water.o)
         self.label_out.set_color((240, 240, 240), self.label_out.o)
         self.label_path.set_color((240, 240, 240), self.label_path.o)
-
-    # shift
-    def add_shift(self, dir: str, dis: int = 10):
-        self.shift = self.shift+dis if dir == "right" else self.shift-dis
-        delta = dis if dir == "right" else -dis
-
-        # add shift to box indicator lines
-        for i in range(round(201/3)+1):
-            pos = self.map.lines_info[f"vert: {i}"]
-            self.map.set_line_pos(f"vert: {i}", pos[0]+delta, pos[1], pos[2]+delta, pos[3])
-        for i in range(round(600/3)+1):
-            pos = self.map.lines_info[f"hor: {i}"]
-            self.map.set_line_pos(f"hor: {i}", pos[0]+delta, pos[1], pos[2]+delta, pos[3])
-
-        # add shift to polygon map
-        pos = self.map.polygon_map_info["hole_map"]
-        self.map.set_polygon_map_pos("hole_map", pos[0]+delta, pos[1])
 
     # next button
     def next_button_press(self):
@@ -320,7 +273,7 @@ class GUI(object):
         # moving on to seth shift
         elif self.label_status == "shift":
             self.label_status = "labeling"
-            self.save_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\save_icon.png")
+            self.save_img.set_img("Icons\\save_icon.png")
         # labeling
         else:
             self.set_notification(
@@ -330,40 +283,7 @@ class GUI(object):
 
     # save
     def save(self):
-        dataset = "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Data_set\\Dataset.csv"
-        with open(dataset, "r") as file:
-            reader = csv.reader(file)
-            
-            starting_point = (self.map.images["Hole"].get_size()[0]/2+self.start_point_pos[0], self.map.images["Hole"].get_size()[1]/2+self.start_point_pos[1])
-            ending_point = (self.map.images["Hole"].get_size()[0]/2+self.end_point_pos[0], self.map.images["Hole"].get_size()[1]/2+self.end_point_pos[1])
-
-            saved = False
-            rows = []
-            for row in reader:
-                # overwrite data if datapoint already exists
-                if row[0] == os.path.basename(self.file_path)[0:6]:
-                    row[1] = self.map.polygon_map["hole_map"].DATA.tolist()
-                    row[2] = self.map.polygon_map["hole_map"].FADE.tolist()
-                    row[3] = starting_point
-                    row[4] = ending_point
-                    row[5] = self.distance
-
-                    saved = True
-
-                rows.append(row)
-
-            # save changed values
-            if saved:
-                with open(dataset, 'w', newline='') as file:
-                    # Create a writer object and save
-                    writer = csv.writer(file)
-                    writer.writerows(rows)
-
-            else:
-                # create a writer object and save in a new line
-                with open(dataset, 'a', newline='') as write_file:
-                    writer = csv.writer(write_file)
-                    writer.writerow([os.path.basename(self.file_path)[0:6], self.map.polygon_map["hole_map"].DATA, self.map.polygon_map["hole_map"].FADE, starting_point, ending_point, self.distance])
+        pass
 
     # left click
     def button_1(self, event):
@@ -395,7 +315,7 @@ class GUI(object):
                     self.end_point_pos = None
 
                     # reset save img
-                    self.save_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\save_icon_empty.png")
+                    self.save_img.set_img("Icons\\save_icon_empty.png")
 
                 # assign file path
                 self.file_path = file
@@ -507,104 +427,6 @@ class GUI(object):
 
             self.button_pressed = True
 
-        # rubber
-        elif self.rubber_back.is_pressed(event):
-            # turn off
-            if self.rubber:
-                self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png")
-                self.rubber = False
-            # turn on
-            else:
-                self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_active.png")
-                self.rubber = True
-
-                # deactivate other tools
-                if self.flood_fill:
-                    self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
-                    self.flood_fill = False
-
-                if self.fade:
-                    self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png")
-                    self.fade = False
-
-            self.button_pressed = True
-
-        # flood fill
-        elif self.flood_fill_back.is_pressed(event):
-            # turn off
-            if self.flood_fill:
-                self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
-                self.flood_fill = False
-            # turn on
-            else:
-                self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_active.png")
-                self.flood_fill = True
-
-                # deactivate other tools
-                if self.rubber:
-                    self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png")
-                    self.rubber = False
-
-                if self.fade:
-                    self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png")
-                    self.fade = False
-
-            self.button_pressed = True
-
-        # fade
-        elif self.fade_back.is_pressed(event):
-            # turn off
-            if self.fade:
-                self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png")
-                self.fade = False
-            # turn on
-            else:
-                self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_active.png")
-                self.fade = True
-
-                # deactivate other tools
-                if self.rubber:
-                    self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png")
-                    self.rubber = False
-
-                if self.flood_fill:
-                    self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
-                    self.flood_fill = False
-
-            self.button_pressed = True
-
-        # redo button
-        if self.redo_but_back.is_pressed(event):
-            if self.actions_index+1 < len(self.actions_list):
-                self.actions_index += 1
-
-                # update data class
-                self.map.polygon_map["hole_map"].update_data(np.array(self.actions_list[self.actions_index][0]), np.array(self.actions_list[self.actions_index][1]))
-
-            # update images
-            if self.actions_index == len(self.actions_list)-1:
-                self.redo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_inactive.png")
-            if self.undo_but_img.src == "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_inactive.png":
-                self.undo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_active.png")
-
-            self.button_pressed = True
-
-        # undo button
-        if self.undo_but_back.is_pressed(event):
-            if self.actions_index-1 >= 0:
-                self.actions_index -= 1
-
-                # update data class
-                self.map.polygon_map["hole_map"].update_data(np.array(self.actions_list[self.actions_index][0]), np.array(self.actions_list[self.actions_index][1]))
-
-            # update images
-            if self.actions_index == 0:
-                self.undo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_inactive.png")
-            if self.redo_but_img.src == "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_inactive.png":
-                self.redo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_active.png")
-
-            self.button_pressed = True
-
     def buttonrelease_1(self, event):
         self.map.buttonrelease_1(event)
 
@@ -638,37 +460,6 @@ class GUI(object):
 
                     self.end_point_pos = [round(map_x), round(map_y)]
 
-            # labeling image
-            elif self.label_status == "labeling" and not self.button_pressed:
-                if self.label_tool is None:
-                    self.set_notification("Please select a labeling tool to continue")
-
-                else:
-                    x_index = floor((self.map.get_click_pos(event)[0]-self.shift+self.new_img_width//2)*self.ratio/3)
-                    y_index = floor((self.map.get_click_pos(event)[1]+self.new_img_height//2)*self.ratio/3)
-
-                    if self.flood_fill:
-                        self.map.polygon_map["hole_map"].flood_fill((x_index, y_index), self.label_tool)
-
-                    else:
-                        if 0 <= x_index <= 66 and 0 <= y_index <= 199:
-                            # change existing one
-                            if self.label_tool is not None:
-                                self.map.polygon_map["hole_map"].set_index(x_index, y_index, -1 if self.rubber else self.label_tool, self.fade)
-
-        # add to activation list
-        if (self.map.polygon_map_exists("hole_map") and len(self.actions_list) == 0) or (self.map.polygon_map_exists("hole_map") and not self.actions_list.count([self.map.polygon_map["hole_map"].DATA.tolist(), self.map.polygon_map["hole_map"].FADE.tolist()])):
-            # remove newer states
-            if self.actions_index+1 < len(self.actions_list):
-                self.actions_list = self.actions_list[:self.actions_index+1]
-                self.redo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_inactive.png")
-
-            self.actions_list.append([self.map.polygon_map["hole_map"].DATA.tolist(), self.map.polygon_map["hole_map"].FADE.tolist()])
-            self.actions_index += 1
-
-            if self.undo_but_img.src == "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_inactive.png" and len(self.actions_list) > 1:
-                self.undo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_active.png")
-
         self.button_pressed = False
 
     # configure event
@@ -696,15 +487,6 @@ class GUI(object):
             self.notification_back.set_pos(self.WINDOW_SIZE[0]//2-self.F2.measure(self.notification)//2-10, 85)
             self.notification_text.set_pos(self.WINDOW_SIZE[0]//2, 97)
 
-        # re place drawing tools
-        self.tools_back.set_pos(self.WINDOW_SIZE[0]//2+187, self.WINDOW_SIZE[1]-75)
-        self.rubber_back.set_pos(self.WINDOW_SIZE[0]//2+187, self.WINDOW_SIZE[1]-75)
-        self.rubber_img.set_pos(self.WINDOW_SIZE[0]//2+212, self.WINDOW_SIZE[1]-50)
-        self.flood_fill_back.set_pos(self.WINDOW_SIZE[0]//2+237, self.WINDOW_SIZE[1]-75)
-        self.flood_fill_img.set_pos(self.WINDOW_SIZE[0]//2+262, self.WINDOW_SIZE[1]-50)
-        self.fade_back.set_pos(self.WINDOW_SIZE[0]//2+287, self.WINDOW_SIZE[1]-75)
-        self.fade_img.set_pos(self.WINDOW_SIZE[0]//2+312, self.WINDOW_SIZE[1]-50)
-
         # re place labeling components
         self.label_back.set_pos(self.WINDOW_SIZE[0]//2-250-87, self.WINDOW_SIZE[1]-75)
         self.label_green.set_pos(self.WINDOW_SIZE[0]//2-245-87, self.WINDOW_SIZE[1]-70)
@@ -731,12 +513,6 @@ class GUI(object):
         # re place map center
         self.map.set_center(self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2)
 
-        # re place undo and redo button
-        self.undo_but_back.set_pos(self.WINDOW_SIZE[0]//2-275, self.undo_but_back.y)
-        self.undo_but_img.set_pos(self.WINDOW_SIZE[0]//2-270, self.undo_but_img.y)
-        self.redo_but_back.set_pos(self.WINDOW_SIZE[0]//2+250, self.redo_but_back.y)
-        self.redo_but_img.set_pos(self.WINDOW_SIZE[0]//2+255, self.redo_but_img.y)
-
         # map origin button and zoom slider
         self.map.set_origin_button_pos(self.WINDOW_SIZE[0]//2-150, self.WINDOW_SIZE[1]-125)
         self.map.set_zoom_slider_pos(self.WINDOW_SIZE[0]//2-100, self.WINDOW_SIZE[1]-113)
@@ -757,37 +533,6 @@ class GUI(object):
     def b1_motion(self, event):
         slider = self.map.add_offset(event.x-self.last_x, event.y-self.last_y, event, "b1")
 
-        if not slider and not self.button_pressed and self.label_status == "labeling":
-            # start and end map pos
-            start = self.map.get_click_pos(None, pos=(self.last_x, self.last_y))
-            end = self.map.get_click_pos(event)
-            
-            # food fill
-            if self.flood_fill:
-                x_index = floor((end[0]-self.shift+self.new_img_width//2)*self.ratio/3)
-                y_index = floor((end[1]+self.new_img_height//2)*self.ratio/3)
-
-                self.map.polygon_map["hole_map"].flood_fill((x_index, y_index), self.label_tool)
-
-            else:
-                # calculate cursor movement variables
-                delta_x = start[0]-end[0]
-                delta_y = start[1]-end[1]
-                steps = round(sqrt(delta_x**2+delta_y**2)/round(3/self.ratio))+1
-
-                for i in range(steps):
-                    # calculate intermediate x, y positions
-                    x = end[0] + delta_x / steps * i
-                    y = end[1] + delta_y / steps * i
-
-                    x_index = floor((x - self.shift + self.new_img_width // 2) * self.ratio / 3)
-                    y_index = floor((y + self.new_img_height // 2) * self.ratio / 3)
-
-                    if 0 <= x_index <= 66 and 0 <= y_index <= 199:
-                        # change existing one
-                        if self.label_tool is not None:
-                            self.map.polygon_map["hole_map"].set_index(x_index, y_index, -1 if self.rubber else self.label_tool, self.fade)
-
         self.last_x = event.x
         self.last_y = event.y
 
@@ -807,66 +552,6 @@ class GUI(object):
 
             self.map.polygon_map["hole_map"].clear()
 
-        # rubber
-        if event.char == "c":
-            # turn off
-            if self.rubber:
-                self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png")
-                self.rubber = False
-            # turn on
-            else:
-                self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_active.png")
-                self.rubber = True
-
-                # deactivate other tools
-                if self.flood_fill:
-                    self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
-                    self.flood_fill = False
-                
-                if self.fade:
-                    self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png")
-                    self.fade = False
-
-        # flood fill
-        if event.char == "v":
-            # turn off
-            if self.flood_fill:
-                self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
-                self.flood_fill = False
-            # turn on
-            else:
-                self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_active.png")
-                self.flood_fill = True
-                
-                # deactivate other tools
-                if self.rubber:
-                    self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png")
-                    self.rubber = False
-                    
-                if self.fade:
-                    self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png")
-                    self.fade = False
-        
-        # fade
-        if event.char == "f":
-            # turn off
-            if self.fade:
-                self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_inactive.png")
-                self.fade = False
-            # turn on
-            else:
-                self.fade_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\fade_active.png")
-                self.fade = True
-
-                # deactivate other tools
-                if self.rubber:
-                    self.rubber_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\eraser_inactive.png")
-                    self.rubber = False
-
-                if self.flood_fill:
-                    self.flood_fill_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\flood_fill_inactive.png")
-                    self.flood_fill = False
-
     # key release
     def key_release(self, event):
         # un hide
@@ -875,16 +560,6 @@ class GUI(object):
 
             self.map.polygon_map["hole_map"].calc_polygon()
             self.map.polygon_map["hole_map"].draw()
-
-    # left arrow
-    def left(self, event):
-        if self.label_status == "shift":
-            self.add_shift("left", 10)
-
-    # right arrow
-    def right(self, event):
-        if self.label_status == "shift":
-            self.add_shift("right", 10)
 
     # control z
     def control_z(self, event):
@@ -896,9 +571,9 @@ class GUI(object):
 
         # update images
         if self.actions_index == 0:
-            self.undo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\undo_icon_inactive.png")
-        if self.redo_but_img.src == "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_inactive.png":
-            self.redo_but_img.set_img("C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\redo_icon_active.png")
+            self.undo_but_img.set_img("Icons\\undo_icon_inactive.png")
+        if self.redo_but_img.src == "Icons\\redo_icon_inactive.png":
+            self.redo_but_img.set_img("Icons\\redo_icon_active.png")
 
     # open the window
     def main_loop(self):
