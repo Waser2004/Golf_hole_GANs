@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter.font import Font
 
 from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Circle, Advanced_Line, Advanced_Image
-from Data_class import Data
+from Data_class import Bezier_Map
 
 
 class Map(object):
@@ -31,8 +31,8 @@ class Map(object):
         self.circles = {}
         self.lines_info = {}
         self.lines = {}
-        self.polygon_map_info = {}
-        self.polygon_map = {}
+        self.bezier_map_info = {}
+        self.bezier_map = {}
 
         self.order = {}
 
@@ -106,11 +106,11 @@ class Map(object):
         self.sort_order()
 
     # add polygon map
-    def add_polygon_map(self, name: str, x: int, y: int, box_size: float, shape: (int, int), colors):
-        assert name not in self.polygon_map, f"Name does already exist in the dictionary choose an other one {name}"
+    def add_bezier_map(self, name: str, x: int, y: int, colors):
+        assert name not in self.bezier_map, f"Name does already exist in the dictionary choose an other one {name}"
 
-        self.polygon_map_info.update({name: [x, y, box_size]})
-        self.polygon_map.update({name: Data(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), box_size*self.zoom, shape, colors)})
+        self.bezier_map_info.update({name: [x, y]})
+        self.bezier_map.update({name: Bezier_Map(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), colors, self)})
 
         self.order.update({f"P:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
         self.sort_order()
@@ -151,11 +151,11 @@ class Map(object):
         self.texts_info[name][0], self.texts_info[name][1] = x, y
         self.texts[name].set_pos(self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom))
 
-    def set_polygon_map_pos(self, name: str, x: int, y: int):
-        assert name in self.polygon_map, "Name does not exist cant change position of a non existing object"
+    def set_bezier_map_pos(self, name: str, x: int, y: int):
+        assert name in self.bezier_map, "Name does not exist cant change position of a non existing object"
 
-        self.polygon_map_info[name][0], self.polygon_map_info[name][1] = x, y
-        self.polygon_map[name].set_pos(self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom))
+        self.bezier_map_info[name][0], self.bezier_map_info[name][1] = x, y
+        self.bezier_map[name].set_pos(self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom))
 
     # change Rectangle z pos
     def set_rectangle_z_pos(self, name: str, z: int):
@@ -258,8 +258,8 @@ class Map(object):
         self.sort_order()
 
     # change polygon map z pos
-    def set_polygon_map_z_pos(self, name: str, z: int):
-        assert name in self.polygon_map, "Name does not exist cant change z position of a non existing object"
+    def set_bezier_map_z_pos(self, name: str, z: int):
+        assert name in self.bezier_map, "Name does not exist cant change z position of a non existing object"
         assert z < len(self.order), "z value is to big"
 
         old_z = self.order[f"P:{name}"]
@@ -348,15 +348,15 @@ class Map(object):
         self.order.pop(f"L:{name}")
 
     # clear polygon map
-    def clear_polygon_map(self, name: str):
-        assert name in self.polygon_map, "name does not exist try an other one"
+    def clear_bezier_map(self, name: str):
+        assert name in self.bezier_map, "name does not exist try an other one"
 
         # erase from screen
-        self.polygon_map[name].clear()
+        self.bezier_map[name].clear()
 
         # clear rectangle information
-        self.polygon_map.pop(name)
-        self.polygon_map_info.pop(name)
+        self.bezier_map.pop(name)
+        self.bezier_map_info.pop(name)
 
         # clear z pos
         self.order.pop(f"P:{name}")
@@ -382,8 +382,8 @@ class Map(object):
         return name in self.lines
 
     # check if polygon map exists
-    def polygon_map_exists(self, name: str) -> bool:
-        return name in self.polygon_map
+    def bezier_map_exists(self, name: str) -> bool:
+        return name in self.bezier_map
 
     # lock line width
     def lock_line_width(self, name: str):
@@ -460,7 +460,7 @@ class Map(object):
                 self.lines[key[2:]].draw()
 
             elif key[0] == "P":
-                self.polygon_map[key[2:]].draw()
+                self.bezier_map[key[2:]].draw()
 
         if self.origin_but_pos is not None:
             self.origin_but.draw()
@@ -494,11 +494,11 @@ class Map(object):
                 self.clear_line(key)
 
         # clear polygon maps
-        for key, value in self.polygon_map.copy().items():
-            self.clear_polygon_map(key)
+        for key, value in self.bezier_map.copy().items():
+            self.clear_bezier_map(key)
 
-        self.polygon_map.clear()
-        self.polygon_map_info.clear()
+        self.bezier_map.clear()
+        self.bezier_map_info.clear()
 
         # reset zoom/position
         self.add_offset(-self.x_offset, -self.y_offset, None, "b2")
@@ -523,7 +523,7 @@ class Map(object):
                 self.lines[key[2:]].set_to_background(forever=True if forever else False)
 
             elif key[0] == "P":
-                self.polygon_map[key[2:]].set_to_background(forever=True if forever else False)
+                self.bezier_map[key[2:]].set_to_background(forever=True if forever else False)
 
         # set forever back/foreground
         self.fev_background = forever
@@ -549,7 +549,7 @@ class Map(object):
                 self.lines[key[2:]].set_to_foregorund(forever=True if forever else False)
 
             elif key[0] == "P":
-                self.polygon_map[key[2:]].set_to_foreground(forever=True if forever else False)
+                self.bezier_map[key[2:]].set_to_foreground(forever=True if forever else False)
 
         # set forever back/foreground
         self.fev_background = False if forever else self.fev_background
@@ -591,8 +591,8 @@ class Map(object):
                 self.lines[key[2:]].set_pos(value.x1+delta[0], value.y1+delta[1], value.x2+delta[0], value.y2+delta[1])
 
             elif key[0] == "P":
-                value = self.polygon_map[key[2:]]
-                self.polygon_map[key[2:]].set_pos(value.x+delta[0], value.y+delta[1])
+                value = self.bezier_map[key[2:]]
+                self.bezier_map[key[2:]].set_pos(value.x+delta[0], value.y+delta[1])
 
     # add x, y offset
     def add_offset(self, x: int, y: int, event = None, key: str = "b1") -> bool:
@@ -631,8 +631,9 @@ class Map(object):
                     self.lines[key[2:]].set_pos(value.x1+x, value.y1+y, value.x2+x, value.y2+y)
 
                 elif key[0] == "P":
-                    value = self.polygon_map[key[2:]]
-                    self.polygon_map[key[2:]].set_pos(value.x+x, value.y+y)
+                    value = self.bezier_map[key[2:]]
+                    self.bezier_map[key[2:]].set_pos(value.x+x, value.y+y)
+                    self.bezier_map[key[2:]].motion(event)
 
             return True
 
@@ -651,6 +652,11 @@ class Map(object):
             self.add_zoom(new_zoom-self.zoom)
 
             return True
+
+        # bezier map polygon point movement
+        for key, value in self.bezier_map.items():
+            if value.point_movement and event is not None:
+                value.move_point(event)
 
         return False
 
@@ -699,9 +705,9 @@ class Map(object):
                     value.set_width(self.lines_info[key[2:]][4])
 
             elif key[0] == "P":
-                value = self.polygon_map[key[2:]]
-                value.set_pos(self.polygon_map_info[key[2:]][0]*self.zoom+self.screen_center[0], self.polygon_map_info[key[2:]][1]*self.zoom+self.screen_center[1])
-                value.set_box_size(self.polygon_map_info[key[2:]][2]*self.zoom)
+                value = self.bezier_map[key[2:]]
+                value.set_pos(self.bezier_map_info[key[2:]][0]*self.zoom+self.screen_center[0], self.bezier_map_info[key[2:]][1]*self.zoom+self.screen_center[1])
+                value.set_zoom()
 
         self.zoom_but.set_pos(self.zoom_slider_pos[0]+round(self.zoom*100)-10 if self.zoom <= 2.1 else self.zoom_slider_pos[0]+200, self.zoom_slider_pos[1]-8)
 
@@ -713,6 +719,10 @@ class Map(object):
         # from position
         else:
             return (pos[0]-self.center[0])/self.zoom-self.x_offset/self.zoom, (pos[1]-self.center[1])/self.zoom-self.y_offset/self.zoom
+
+    # return the screen position for a map position
+    def get_screen_pos(self, pos: (int, int)) -> (int, int):
+        return pos[0]*self.zoom+self.x_offset+self.center[0], pos[1]*self.zoom+self.y_offset+self.center[1]
 
     # left click
     def button_1(self, event):

@@ -73,6 +73,15 @@ class Advanced_Circle(object):
             # update z layer pos
             self.__update_z_pos()
 
+    # set outline width
+    def set_outline_width(self, width):
+        # change width
+        if self.object is not None:
+            self.canvas.itemconfig(self.object, width=width)
+
+            # update z layer pos
+            self.__update_z_pos()
+
     # put into foreground
     def set_to_foreground(self, forever: bool = False):
         if self.object is not None:
@@ -130,7 +139,7 @@ class Advanced_Polygon(object):
     # draw circle on the screen
     def draw(self):
         if self.object is None:
-            self.object = self.canvas.create_polygon(self.pos, fill=self.rgb_to_hex(self.c))
+            self.object = self.canvas.create_polygon(self.pos, fill=self.rgb_to_hex(self.c), outline=self.rgb_to_hex(self.ol))
 
         # update z layer pos
         self.__update_z_pos()
@@ -166,6 +175,120 @@ class Advanced_Polygon(object):
 
             # update z layer pos
             self.__update_z_pos()
+
+    # is pressed
+    def is_pressed(self, event):
+        # check if the polygon item is clicked on
+        if self.object in self.canvas.find_overlapping(event.x, event.y, event.x, event.y):
+            return True
+
+        return False
+
+    # put into foreground
+    def set_to_foreground(self, forever: bool = False):
+        if self.object is not None:
+            self.canvas.tag_raise(self.object, tk.ALL)
+
+        # update z layer state
+        self.foreground = forever
+        self.background = False if forever or self.background is False else True
+
+    # set into the background
+    def set_to_background(self, forever: bool = False):
+        if self.object is not None:
+            self.canvas.tag_lower(self.object, tk.ALL)
+
+        # update z layer state
+        self.background = forever
+        self.foreground = False if forever or self.foreground is False else True
+
+    # update z position
+    def __update_z_pos(self):
+        # move to foreground
+        if self.foreground:
+            self.set_to_foreground(forever=True)
+        # move to background
+        elif self.background:
+            self.set_to_background(forever=True)
+
+    # convert rgb to hex
+    @staticmethod
+    def rgb_to_hex(rgb):
+        assert all(0 <= color <= 255 for color in rgb), "all rgb values have to be between 0 and 255"
+
+        return '#{:02x}{:02x}{:02x}'.format(rgb[0], rgb[1], rgb[2])
+
+
+class Advanced_Lines(object):
+    def __init__(self, canvas: tk.Canvas, pos, width: int, color: (int, int, int)):
+        self.canvas = canvas
+        self.pos = pos
+        self.w = width
+        self.c = list(color)
+
+        self.object = None
+
+        self.background = False
+        self.foreground = False
+
+    # draw circle on the screen
+    def draw(self):
+        if self.object is None and len(self.pos) > 0:
+            self.object = self.canvas.create_line(self.pos, fill=self.rgb_to_hex(self.c), width=self.w)
+
+        # update z layer pos
+        self.__update_z_pos()
+
+    # erase circle from the screen
+    def clear(self):
+        if self.object is not None:
+            self.canvas.delete(self.object)
+            self.object = None
+
+    # change the position of the circle
+    def set_pos(self, pos):
+        # calculate delta
+        self.pos = pos
+
+        # change position
+        if self.object is not None:
+            self.canvas.coords(self.object, [x for tup in self.pos for x in tup])
+            self.canvas.tag_raise(self.object, tk.ALL)
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # update color
+    def set_color(self, color: (int, int, int)):
+        # update class parameters
+        self.c = color
+
+        # change color
+        if self.object is not None:
+            self.canvas.itemconfig(self.object, fill=self.rgb_to_hex(self.c))
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # set width
+    def set_width(self, width: int):
+        # update class parameters
+        self.w = width
+
+        # change color
+        if self.object is not None:
+            self.canvas.itemconfig(self.object, width=self.w)
+
+            # update z layer pos
+            self.__update_z_pos()
+
+    # is pressed
+    def is_pressed(self, event):
+        # check if the polygon item is clicked on
+        if self.object in self.canvas.find_overlapping(event.x, event.y, event.x, event.y):
+            return True
+
+        return False
 
     # put into foreground
     def set_to_foreground(self, forever: bool = False):
