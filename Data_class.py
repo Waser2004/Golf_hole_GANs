@@ -763,7 +763,11 @@ class Bezier_Map(object):
         self.points_poly_map[self.poly_index].pop(self.sel_point)
 
         # select previous point
-        self.select_point(self.sel_point-1 if self.sel_point-1 >= 0 else len(self.can_bezier_points[self.poly_index])-1)
+        if len(self.can_bezier_points[self.poly_index]) > 0:
+            self.select_point(self.sel_point-1 if self.sel_point-1 >= 0 else len(self.can_bezier_points[self.poly_index])-1)
+        # delete polygon
+        else:
+            self.delete_polygon()
 
     # change point type
     def change_type(self):
@@ -1083,27 +1087,28 @@ class Bezier_Map(object):
 
     # hide selected
     def hide_selected(self):
-        # clear polygon
-        self.can_poly[self.poly_index].clear()
-        # update to new type
-        if type(self.can_poly[self.poly_index]) == Advanced_Polygon:
-            self.can_poly[self.poly_index] = Advanced_Lines(self.canvas, [], 1, self.poly_colors[self.poly_index])
-        elif type(self.can_poly[self.poly_index]) == Advanced_Lines:
-            self.can_poly[self.poly_index] = Advanced_Polygon(self.canvas, [], self.poly_colors[self.poly_index], (0, 0, 0))
+        if self.poly_index is not None:
+            # clear polygon
+            self.can_poly[self.poly_index].clear()
+            # update to new type
+            if type(self.can_poly[self.poly_index]) == Advanced_Polygon:
+                self.can_poly[self.poly_index] = Advanced_Lines(self.canvas, [], 1, self.poly_colors[self.poly_index])
+            elif type(self.can_poly[self.poly_index]) == Advanced_Lines:
+                self.can_poly[self.poly_index] = Advanced_Polygon(self.canvas, [], self.poly_colors[self.poly_index], (0, 0, 0))
 
-        # move to background
-        if self.background:
-            self.can_poly[self.poly_index].set_to_background(True)
-        if self.foreground:
-            self.can_poly[self.poly_index].set_to_foreground(True)
+            # move to background
+            if self.background:
+                self.can_poly[self.poly_index].set_to_background(True)
+            if self.foreground:
+                self.can_poly[self.poly_index].set_to_foreground(True)
 
-        # update_pos
-        poly_index = self.poly_index
-        self.calc_outline(self.poly_index)
-        self.map.draw()
+            # update_pos
+            poly_index = self.poly_index
+            self.calc_outline(self.poly_index)
+            self.map.draw()
 
-        # select polygon again
-        self.select_polygon(None, poly_index)
+            # select polygon again
+            self.select_polygon(None, poly_index)
 
     # move up in z
     def up_z_pos(self):

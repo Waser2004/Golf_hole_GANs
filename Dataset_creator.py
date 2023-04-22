@@ -396,6 +396,22 @@ class GUI(object):
             # there is no data available
             else:
                 self.load_image()
+        # if no file is selected clear all
+        else:
+            # reset map
+            self.map.clear_all()
+
+            # reset labeling status
+            self.sel_file_text.set_text("Select Image")
+            self.label_status = "Select Image"
+
+            # reset all buttons
+            if self.undo_but_img.src == "Icons/undo_icon_active.png":
+                self.undo_but_img.set_img("Icons/undo_icon_inactive.png")
+            if self.redo_but_img.src == "Icons/redo_icon_active.png":
+                self.redo_but_img.set_img("Icons/redo_icon_inactive.png")
+            if self.next_img.src == "Icons/right-arrow.png":
+                self.next_img.set_img("Icons/right-arrow_inactive.png")
 
     # load data
     def load_from_csv(self):
