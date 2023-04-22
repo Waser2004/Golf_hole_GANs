@@ -76,7 +76,7 @@ class GUI(object):
         self.ratio = None
         self.label_tool = None
 
-        self.colors = [(50, 205, 50), (104, 155, 64), (33, 153, 50), (154, 205, 50), (128, 128, 0), (210, 180, 140), (240, 230, 140), (85, 107, 47), (70, 130, 180), (255, 255, 255), (128, 128, 128), (226, 114, 91)]
+        self.colors = [(50, 205, 50), (104, 155, 64), (33, 153, 50), (20, 101, 33), (17, 76, 25), (210, 180, 140), (240, 230, 140), (17, 48, 25), (70, 130, 180), (255, 255, 255), (128, 128, 128), (226, 114, 91)]
         self.color_texts = ["green", "tee", "fairway", "semi\nrough", "high\nrough", "bunker", "waste\narea", "forest", "water", "out", "path", "house"]
 
         self.color_labels = []

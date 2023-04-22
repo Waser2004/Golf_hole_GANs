@@ -18,11 +18,11 @@ class Data_converter(object):
             (50, 205, 50),
             (104, 155, 64),
             (33, 153, 50),
-            (154, 205, 50),
-            (128, 128, 0),
+            (20, 101, 33),
+            (17, 76, 25),
             (210, 180, 140),
             (240, 230, 140),
-            (85, 107, 47),
+            (17, 48, 25),
             (70, 130, 180),
             (255, 255, 255),
             (128, 128, 128),
@@ -49,8 +49,8 @@ class Data_converter(object):
         self.outlines = [[] for _ in self.data]
 
         # numpy arrays
-        self.poly_array = np.zeros((self.GRID_SIZE[1], self.GRID_SIZE[0]))
-        self.fade_array = np.zeros((self.GRID_SIZE[1], self.GRID_SIZE[0]))
+        self.poly_array = np.zeros((self.GRID_SIZE[1], self.GRID_SIZE[0]), dtype=np.int32)
+        self.fade_array = np.zeros((self.GRID_SIZE[1], self.GRID_SIZE[0]), dtype=np.int32)
 
         # converted data dict
         self.converted_data = {}
