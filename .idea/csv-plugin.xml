@@ -3,6 +3,13 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
+        <entry key="D:\Ondrive\OneDrive - Venusnet\Dokumente\6.Programieren\2. Python\Golf_hole_GANs\Data_set\Dataset.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\Data_set\Dataset.csv">
           <value>
             <Attribute>

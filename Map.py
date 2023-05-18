@@ -1,7 +1,8 @@
+import copy
 import tkinter as tk
 from tkinter.font import Font
 
-from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Circle, Advanced_Line, Advanced_Image
+from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Circle, Advanced_Line, Advanced_Lines, Advanced_Image
 from Data_class import Bezier_Map
 
 
@@ -31,6 +32,8 @@ class Map(object):
         self.circles = {}
         self.lines_info = {}
         self.lines = {}
+        self.cont_lines_info = {}
+        self.cont_lines = {}
         self.bezier_map_info = {}
         self.bezier_map = {}
 
@@ -62,7 +65,7 @@ class Map(object):
         self.rectangles_info.update({name: [x, y, width, height, radius]})
         self.rectangles.update({name: Advanced_Rectangle(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), round(width*self.zoom), round(height*self.zoom), color if outline is None else outline, color, round(radius*self.zoom))})
 
-        self.order.update({f"R:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
+        self.order.update({f"R:{name}": len(self.order) - 1 if len(self.order) > 0 else 0})
         self.sort_order()
 
     # add a text element
@@ -72,7 +75,7 @@ class Map(object):
         self.texts_info.update({name: [x, y]})
         self.texts.update({name: Advanced_Text(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), text, color, self.font if font is None else font)})
 
-        self.order.update({f"T:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
+        self.order.update({f"T:{name}": len(self.order) - 1 if len(self.order) > 0 else 0})
         self.sort_order()
 
     # add a image element
@@ -82,7 +85,7 @@ class Map(object):
         self.images_info.update({name: [x, y]})
         self.images.update({name: Advanced_Image(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), source, anchor=anchor)})
 
-        self.order.update({f"I:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
+        self.order.update({f"I:{name}": len(self.order) if len(self.order) > 0 else 0})
         self.sort_order()
 
     # add circle element
@@ -90,9 +93,9 @@ class Map(object):
         assert name not in self.circles, "Name does already exist in the dictionary choose an other one"
 
         self.circles_info.update({name: [x, y, radius]})
-        self.circles.update({name: Advanced_Circle(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), round(radius*self.zoom), color if outline is None else outline, color)})
+        self.circles.update({name: Advanced_Circle(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), round(radius*self.zoom), color, color if outline is None else outline)})
 
-        self.order.update({f"C:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
+        self.order.update({f"C:{name}": len(self.order) if len(self.order) > 0 else 0})
         self.sort_order()
 
     # add line element
@@ -102,7 +105,22 @@ class Map(object):
         self.lines_info.update({name: [x1, y1, x2, y2, width, width_lock]})
         self.lines.update({name: Advanced_Line(self.canvas, self.screen_center[0]+round(x1*self.zoom), self.screen_center[1]+round(y1*self.zoom), self.screen_center[0]+round(x2*self.zoom), self.screen_center[1]+round(y2*self.zoom), 1 if round(width*self.zoom) <= 1 else round(width*self.zoom), color)})
 
-        self.order.update({f"L:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
+        self.order.update({f"L:{name}": len(self.order) if len(self.order) > 0 else 0})
+        self.sort_order()
+
+    # add lines element
+    def add_lines(self, name: str, pos: list[[float, float]], width: int, color: (int, int, int) = (0, 0, 0), width_lock: bool = False):
+        assert name not in self.cont_lines, "Name does already exist in the dictionary choose an other one"
+
+        # convert points
+        screen_points = []
+        for p in pos:
+            screen_points.append(self.get_screen_pos(p))
+
+        self.cont_lines_info.update({name: [pos, width, width_lock]})
+        self.cont_lines.update({name: Advanced_Lines(self.canvas, screen_points, 1 if round(width*self.zoom) <= 1 else round(width*self.zoom), color)})
+
+        self.order.update({f"O:{name}": len(self.order) if len(self.order) > 0 else 0})
         self.sort_order()
 
     # add polygon map
@@ -112,7 +130,7 @@ class Map(object):
         self.bezier_map_info.update({name: [x, y]})
         self.bezier_map.update({name: Bezier_Map(self.canvas, self.screen_center[0]+round(x*self.zoom), self.screen_center[1]+round(y*self.zoom), colors, self)})
 
-        self.order.update({f"P:{name}": max(self.order.items(), key=lambda x: x[1])[1] + 1 if len(self.order) > 0 else 0})
+        self.order.update({f"P:{name}": len(self.order) if len(self.order) > 0 else 0})
         self.sort_order()
 
     # set rectangle pos
@@ -143,6 +161,18 @@ class Map(object):
 
         self.lines_info[name][0], self.lines_info[name][1], self.lines_info[name][2], self.lines_info[name][3] = x1, y1, x2, y2
         self.lines[name].set_pos(self.screen_center[0]+round(x1*self.zoom), self.screen_center[1]+round(y1*self.zoom), self.screen_center[0]+round(x2*self.zoom), self.screen_center[1]+round(y2*self.zoom))
+
+    # set lines pos
+    def set_lines_pos(self, name: str, pos: list[[float, float]]):
+        assert name in self.cont_lines, "Name does not exist cant change position of a non existing object"
+
+        # convert points
+        screen_points = []
+        for p in pos:
+            screen_points.append(self.get_screen_pos(p))
+
+        self.cont_lines_info[name][0] = pos
+        self.cont_lines[name].set_pos(screen_points)
 
     # set text pos
     def set_text_pos(self, name: str, x: int, y: int):
@@ -257,6 +287,26 @@ class Map(object):
 
         self.sort_order()
 
+    # change circle z pos
+    def set_lines_z_pos(self, name: str, z: int):
+        assert name in self.cont_lines, "Name does not exist cant change z position of a non existing object"
+        assert z < len(self.order), "z value is to big"
+
+        old_z = self.order[f"O:{name}"]
+
+        # change other z values
+        if old_z < z:
+            for key, value in list(self.order.items())[old_z + 1:z + 1]:
+                self.order[key] -= 1
+        if old_z > z:
+            for key, value in list(self.order.items())[z:old_z]:
+                self.order[key] += 1
+
+        # set new z value
+        self.order[f"O:{name}"] = z
+
+        self.sort_order()
+
     # change polygon map z pos
     def set_bezier_map_z_pos(self, name: str, z: int):
         assert name in self.bezier_map, "Name does not exist cant change z position of a non existing object"
@@ -290,6 +340,7 @@ class Map(object):
         
         # clear z pos
         self.order.pop(f"R:{name}")
+        self.sort_order()
 
     # clear text
     def clear_text(self, name: str):
@@ -304,6 +355,7 @@ class Map(object):
 
         # clear z pos
         self.order.pop(f"T:{name}")
+        self.sort_order()
 
     # clear image
     def clear_image(self, name: str):
@@ -318,6 +370,7 @@ class Map(object):
 
         # clear z pos
         self.order.pop(f"I:{name}")
+        self.sort_order()
 
     # clear circle
     def clear_circle(self, name: str):
@@ -332,6 +385,7 @@ class Map(object):
 
         # clear z pos
         self.order.pop(f"C:{name}")
+        self.sort_order()
 
     # clear line
     def clear_line(self, name: str):
@@ -346,6 +400,22 @@ class Map(object):
 
         # clear z pos
         self.order.pop(f"L:{name}")
+        self.sort_order()
+
+    # clear lines
+    def clear_lines(self, name: str):
+        assert name in self.cont_lines, "name does not exist try an other one"
+
+        # erase from screen
+        self.cont_lines[name].clear()
+
+        # clear rectangle information
+        self.cont_lines.pop(name)
+        self.cont_lines_info.pop(name)
+
+        # clear z pos
+        self.order.pop(f"O:{name}")
+        self.sort_order()
 
     # clear polygon map
     def clear_bezier_map(self, name: str):
@@ -360,16 +430,17 @@ class Map(object):
 
         # clear z pos
         self.order.pop(f"P:{name}")
+        self.sort_order()
 
-    # check if circle with name exists
+    # check if rectangle with name exists
     def rectangle_exists(self, name: str) -> bool:
         return name in self.rectangles
 
-    # check if circle with name exists
+    # check if text with name exists
     def text_exists(self, name: str) -> bool:
         return name in self.texts
 
-    # check if circle with name exists
+    # check if image with name exists
     def img_exists(self, name: str) -> bool:
         return name in self.images
 
@@ -377,9 +448,13 @@ class Map(object):
     def circle_exists(self, name: str) -> bool:
         return name in self.circles
 
-    # check if circle with name exists
+    # check if line with name exists
     def line_exists(self, name: str) -> bool:
         return name in self.lines
+
+    # check if lines with name exists
+    def lines_exists(self, name: str) -> bool:
+        return name in self.cont_lines
 
     # check if polygon map exists
     def bezier_map_exists(self, name: str) -> bool:
@@ -393,9 +468,21 @@ class Map(object):
     def unlock_line_width(self, name: str):
         self.lines_info[name][5] = False
 
+    # lock line width
+    def lock_lines_width(self, name: str):
+        self.cont_lines_info[name][2] = True
+
+    # unlock line width
+    def unlock_lines_width(self, name: str):
+        self.cont_lines_info[name][2] = False
+
     # sort order according to z value
     def sort_order(self):
         self.order = dict(sorted(self.order.items(), key=lambda x: x[1]))
+
+        # update index positions
+        for index, value in enumerate(list(self.order.items())):
+            self.order[value[0]] = index
 
         # update the z_pos layout
         if self.fev_background:
@@ -442,6 +529,11 @@ class Map(object):
         if self.fev_background:
             iterator = reversed(self.order.items())
 
+            # draw bezier map selection box
+            for key, value in reversed(self.order.items()):
+                if key[0] == "P":
+                    self.bezier_map[key[2:]].draw_sel_box()
+
         # loop through everything
         for key, value in iterator:
             if key[0] == "R":
@@ -459,8 +551,17 @@ class Map(object):
             elif key[0] == "L":
                 self.lines[key[2:]].draw()
 
+            elif key[0] == "O":
+                self.cont_lines[key[2:]].draw()
+
             elif key[0] == "P":
                 self.bezier_map[key[2:]].draw()
+
+        if not self.fev_background:
+            # draw bezier map selection box
+            for key, value in self.order.items():
+                if key[0] == "P":
+                    self.bezier_map[key[2:]].draw_sel_box()
 
         if self.origin_but_pos is not None:
             self.origin_but.draw()
@@ -488,10 +589,14 @@ class Map(object):
         for key, value in self.circles.copy().items():
             self.clear_circle(key)
 
-        # clear lines
+        # clear line
         for key, value in self.lines.copy().items():
             if key != "X-axis" and key != "Y-axis":
                 self.clear_line(key)
+
+        # clear lines
+        for key, value in self.cont_lines.copy().items():
+            self.clear_lines(key)
 
         # clear polygon maps
         for key, value in self.bezier_map.copy().items():
@@ -522,6 +627,9 @@ class Map(object):
             elif key[0] == "L":
                 self.lines[key[2:]].set_to_background(forever=True if forever else False)
 
+            elif key[0] == "O":
+                self.cont_lines[key[2:]].set_to_background(forever=True if forever else False)
+
             elif key[0] == "P":
                 self.bezier_map[key[2:]].set_to_background(forever=True if forever else False)
 
@@ -548,6 +656,9 @@ class Map(object):
             elif key[0] == "L":
                 self.lines[key[2:]].set_to_foregorund(forever=True if forever else False)
 
+            elif key[0] == "O":
+                self.cont_lines[key[2:]].set_to_foreground(forever=True if forever else False)
+
             elif key[0] == "P":
                 self.bezier_map[key[2:]].set_to_foreground(forever=True if forever else False)
 
@@ -566,6 +677,11 @@ class Map(object):
         iterator = self.order.items()
         if self.fev_background:
             iterator = reversed(self.order.items())
+
+            # draw bezier map selection box
+            for key, value in reversed(self.order.items()):
+                if key[0] == "P":
+                    self.bezier_map[key[2:]].set_sel_pos()
 
         # loop through everything
         for key, value in iterator:
@@ -590,9 +706,25 @@ class Map(object):
                 value = self.lines[key[2:]]
                 self.lines[key[2:]].set_pos(value.x1+delta[0], value.y1+delta[1], value.x2+delta[0], value.y2+delta[1])
 
+            elif key[0] == "O":
+                screen_points = []
+                for p in self.cont_lines[key[2:]].pos:
+                    screen_points.append((p[0] + delta[0], p[1] + delta[1]))
+
+                self.cont_lines[key[2:]].set_pos(screen_points)
+
             elif key[0] == "P":
                 value = self.bezier_map[key[2:]]
                 self.bezier_map[key[2:]].set_pos(value.x+delta[0], value.y+delta[1])
+
+        if not self.fev_background:
+            # draw bezier map selection box
+            for key, value in self.order.items():
+                if key[0] == "P":
+                    self.bezier_map[key[2:]].set_sel_pos()
+
+        # draw map
+        self.draw()
 
     # add x, y offset
     def add_offset(self, x: int, y: int, event = None, key: str = "b1") -> bool:
@@ -606,6 +738,11 @@ class Map(object):
             iterator = self.order.items()
             if self.fev_background:
                 iterator = reversed(self.order.items())
+
+                # draw bezier map selection box
+                for key, value in reversed(self.order.items()):
+                    if key[0] == "P":
+                        self.bezier_map[key[2:]].set_sel_pos()
 
             # loop through everything
             for key, value in iterator:
@@ -630,10 +767,25 @@ class Map(object):
                     value = self.lines[key[2:]]
                     self.lines[key[2:]].set_pos(value.x1+x, value.y1+y, value.x2+x, value.y2+y)
 
+                elif key[0] == "O":
+                    screen_points = []
+                    for p in self.cont_lines[key[2:]].pos:
+                        screen_points.append((p[0] + x, p[1] + y))
+
+                    self.cont_lines[key[2:]].set_pos(screen_points)
+
                 elif key[0] == "P":
                     value = self.bezier_map[key[2:]]
                     self.bezier_map[key[2:]].set_pos(value.x+x, value.y+y)
-                    self.bezier_map[key[2:]].motion(event)
+
+            if not self.fev_background:
+                # draw bezier map selection box
+                for key, value in self.order.items():
+                    if key[0] == "P":
+                        self.bezier_map[key[2:]].set_sel_pos()
+
+            # draw map
+            self.draw()
 
             return True
 
@@ -672,6 +824,11 @@ class Map(object):
         if self.fev_background:
             iterator = reversed(self.order.items())
 
+            # draw bezier map selection box
+            for key, value in reversed(self.order.items()):
+                if key[0] == "P":
+                    self.bezier_map[key[2:]].set_sel_pos()
+
         # loop through everything
         for key, value in iterator:
 
@@ -704,12 +861,29 @@ class Map(object):
                 else:
                     value.set_width(self.lines_info[key[2:]][4])
 
+            elif key[0] == "O":
+                value = self.cont_lines[key[2:]]
+                self.set_lines_pos(key[2:], self.cont_lines_info[key[2:]][0])
+                if not self.cont_lines_info[key[2:]][2]:
+                    value.set_width(1 if round(self.cont_lines_info[key[2:]][1]*self.zoom) <= 1 else round(self.cont_lines_info[key[2:]][1]*self.zoom))
+                else:
+                    value.set_width(self.cont_lines_info[key[2:]][1])
+
             elif key[0] == "P":
                 value = self.bezier_map[key[2:]]
                 value.set_pos(self.bezier_map_info[key[2:]][0]*self.zoom+self.screen_center[0], self.bezier_map_info[key[2:]][1]*self.zoom+self.screen_center[1])
                 value.set_zoom()
 
+        if not self.fev_background:
+            # draw bezier map selection box
+            for key, value in self.order.items():
+                if key[0] == "P":
+                    self.bezier_map[key[2:]].set_sel_pos()
+
         self.zoom_but.set_pos(self.zoom_slider_pos[0]+round(self.zoom*100)-10 if self.zoom <= 2.1 else self.zoom_slider_pos[0]+200, self.zoom_slider_pos[1]-8)
+
+        # draw map
+        self.draw()
 
     # return position on map for left click
     def get_click_pos(self, event, pos: (int, int) = None) -> (int, int):

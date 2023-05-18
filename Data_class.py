@@ -30,27 +30,18 @@ class Bezier_Map(object):
 
         # select polygon interface
         self.sel_map_pos = None
-        self.sel_back = Advanced_Rectangle(self.canvas, 0, 0, 120, 24, None, (240, 240, 240), 2)
+        self.sel_back = Advanced_Rectangle(self.canvas, 0, 0, 96, 24, None, (240, 240, 240), 2)
         self.sel_edit = Advanced_Image(self.canvas, 0, 0, "Icons\\edit.png", "center")
         self.sel_hide = Advanced_Image(self.canvas, 0, 0, "Icons\\hide.png", "center")
-        self.sel_fade = Advanced_Image(self.canvas, 0, 0, "Icons\\gradient.png", "center")
         self.sel_up = Advanced_Image(self.canvas, 0, 0, "Icons\\up_arrow.png", "center")
         self.sel_down = Advanced_Image(self.canvas, 0, 0, "Icons\\down_arrow.png", "center")
 
         self.edit = False
-        self.fade = False
-        self.pre_adj_fade = None
-        self.fade_mode = "add_fade"
-        self.can_fade = []
-        self.fade_index = None
-        self.fade_index_start = False
 
         self.c_key_pressed = False
         self.circle_creation = False
         self.circle_center_point = None
         self.circle_radius = None
-
-        self.fade_indicator = Advanced_Circle(self.canvas, 0, 0, 4, (0, 0, 0))
 
         # z order
         self.z_order = []
@@ -67,25 +58,25 @@ class Bezier_Map(object):
         self.can_poly_arrow = Advanced_Line(self.canvas, 0, 0, 0, 0, 1, (0, 0, 0))
 
     # load data
-    def load_data(self, bezier_points: list, fades: list, colors: list):
+    def load_data(self, bezier_points: list, colors: list):
         # load data
         for i, val in enumerate(reversed(bezier_points)):
-            self.recover_polygon(self.colors[colors[len(bezier_points)-1-i]], val, i, fades[len(bezier_points)-1-i])
+            self.recover_polygon(self.colors[colors[len(bezier_points)-1-i]], val, i)
 
         # unselect polygon
         self.unselect_polygon()
 
-    # draw
-    def draw(self):
-        # draw select box
+    # draw select box
+    def draw_sel_box(self):
         if self.sel_map_pos is not None:
             self.sel_edit.draw()
             self.sel_hide.draw()
-            self.sel_fade.draw()
             self.sel_up.draw()
             self.sel_down.draw()
             self.sel_back.draw()
 
+    # draw
+    def draw(self):
         # draw bezier points
         if self.poly_index is not None:
             for obj in self.can_bezier_points[self.poly_index]:
@@ -99,10 +90,6 @@ class Bezier_Map(object):
         # draw polygons
         for index in self.z_order:
             if not (self.poly_index == index and self.edit):
-                # draw fade curves
-                for fade in self.can_fade[index]:
-                    fade[2].draw()
-
                 # draw polygon
                 self.can_poly[index].draw()
 
@@ -148,21 +135,6 @@ class Bezier_Map(object):
             # all polygons were hidden
             elif action[0] == "hide_all":
                 self.hide_all()
-            # selected polygon is being faded
-            elif action[0] == "fade_poly":
-                self.fade_selected()
-            # fade line was added
-            elif action[0] == "add_fade":
-                self.add_fade(action[2], action[3], action[4])
-            # fade line was adjusted
-            elif action[0] == "adj_fade":
-                self.adjust_fade(action[1], action[2], action[3], action[4])
-            # fade line was deleted
-            elif action[0] == "del_fade":
-                self.delete_fade(action[1])
-            # selected polygon is no longer being faded
-            elif action[0] == "unfade_poly":
-                self.fade_unselect()
             # polygon z_pos was raised
             elif action[0] == "up_z":
                 self.up_z_pos()
@@ -219,21 +191,6 @@ class Bezier_Map(object):
             # all polygons were hidden
             elif action[0] == "hide_all":
                 self.hide_all()
-            # selected polygon is being faded
-            elif action[0] == "fade_poly":
-                self.fade_unselect()
-            # fade line was added
-            elif action[0] == "add_fade":
-                self.delete_fade(action[1])
-            # fade line was adjusted
-            elif action[0] == "adj_fade":
-                self.adjust_fade(action[1], action[5], action[6], action[7])
-            # fade line was deleted
-            elif action[0] == "del_fade":
-                self.add_fade(action[2], action[3], action[4])
-            # selected polygon is no longer being faded
-            elif action[0] == "unfade_poly":
-                self.fade_selected()
             # polygon z_pos was raised
             elif action[0] == "up_z":
                 self.down_z_pos()
@@ -242,7 +199,7 @@ class Bezier_Map(object):
                 self.up_z_pos()
             # polygon was deleted
             elif action[0] == "del_poly":
-                self.recover_polygon(action[1], action[2], action[3], action[4])
+                self.recover_polygon(action[1], action[2], action[3])
             # polygon was unselected
             elif action[0] == "uns_poly":
                 self.select_polygon(None, action[1])
@@ -259,7 +216,7 @@ class Bezier_Map(object):
         self.history_index += 1
 
     # create new polygon
-    def recover_polygon(self, color: (int, int, int), pos: list[[int, int], bool], z_value: int, fades: list[int, int, bool]):
+    def recover_polygon(self, color: (int, int, int), pos: list[[int, int], bool], z_value: int):
         # create polygon
         self.poly_colors.append(color)
         # add map position to polygon
@@ -290,31 +247,6 @@ class Bezier_Map(object):
         poly_index = self.poly_index
         self.calc_outline(poly_index)
         self.select_polygon(None, poly_index)
-
-        # add fade
-        for fade in fades:
-            # calculate curvature
-            screen_pos = [self.map.get_screen_pos(pos) for pos in self.bezier_poly[self.poly_index]]
-            # normal direction
-            if not fade[2]:
-                if fade[0] < fade[1]:
-                    pos = screen_pos[fade[0]:fade[1]]
-                else:
-                    pos = screen_pos[fade[0]:] + screen_pos[:fade[1]]
-            # revers direction
-            else:
-                if fade[0] > fade[1]:
-                    pos = screen_pos[fade[1]:fade[0]]
-                else:
-                    pos = screen_pos[fade[1]:] + screen_pos[:fade[0]]
-
-            self.can_fade[-1].append([fade[0], fade[1], Advanced_Lines(self.canvas, pos, 3, (0, 0, 0)), fade[2]])
-
-            # set z layer pos
-            if self.background:
-                self.can_fade[-1][-1][2].set_to_background(True)
-            elif self.foreground:
-                self.can_fade[-1][-1][2].set_to_foreground(True)
 
         self.sel_point = len(pos)-1
 
@@ -496,88 +428,6 @@ class Bezier_Map(object):
         self.can_bezier_points[self.poly_index][self.sel_point+1].draw()
         self.select_point(self.sel_point + 1)
 
-    # unselect fade
-    def fade_unselect(self):
-        if self.fade:
-            if self.fade_mode == "add_fade" and self.fade_index is not None:
-                self.can_fade[self.poly_index][self.fade_index][2].clear()
-                self.can_fade[self.poly_index].pop(self.fade_index)
-            # fade is being adjusted
-            elif self.fade_mode == "adj_fade" and self.fade_index is not None:
-                self.adjust_fade(self.pre_adj_fade[0], self.pre_adj_fade[1], self.pre_adj_fade[2], self.pre_adj_fade[3])
-
-            # reset variables
-            self.pre_adj_fade = None
-            self.fade_index = None
-            self.fade_index_start = False
-            self.fade_mode = "add_fade"
-            # unselect fade
-            self.fade_indicator.clear()
-            self.fade = False
-
-            # select polygon
-            self.select_polygon(None, self.poly_index)
-    
-    # add fade
-    def add_fade(self, index_1: int, index_2: int, direction: bool):
-        self.can_fade[self.poly_index].append([index_1, index_2+1, Advanced_Lines(self.canvas, self.can_poly[self.poly_index].pos[index_1-1:index_2+1], 3, (0, 0, 0)), direction])
-
-        # calculate curvature
-        fade = self.can_fade[self.poly_index][-1]
-        screen_pos = [self.map.get_screen_pos(pos) for pos in self.bezier_poly[self.poly_index]]
-        # normal direction
-        if not fade[3]:
-            if fade[0] < fade[1]:
-                fade[2].set_pos(screen_pos[fade[0]:fade[1]])
-            else:
-                fade[2].set_pos(screen_pos[fade[0]:] + screen_pos[:fade[1]])
-        # revers direction
-        else:
-            if fade[0] > fade[1]:
-                fade[2].set_pos(screen_pos[fade[1]:fade[0]])
-            else:
-                fade[2].set_pos(screen_pos[fade[1]:] + screen_pos[:fade[0]])
-
-        # set z layer pos
-        if self.background:
-            self.can_fade[self.poly_index][-1][2].set_to_background(True)
-        elif self.foreground:
-            self.can_fade[self.poly_index][-1][2].set_to_foreground(True)
-
-    # adjust fade
-    def adjust_fade(self, fade_index, index_1, index_2, direction):
-        self.can_fade[self.poly_index][fade_index][2].clear()
-        self.can_fade[self.poly_index][fade_index] = [index_1, index_2+1, Advanced_Lines(self.canvas, self.can_poly[self.poly_index].pos[index_1-1:index_2+1], 3, (0, 0, 0)), direction]
-
-        # calculate curvature
-        fade = self.can_fade[self.poly_index][fade_index]
-        screen_pos = [self.map.get_screen_pos(pos) for pos in self.bezier_poly[self.poly_index]]
-        # normal direction
-        if not fade[3]:
-            if fade[0] < fade[1]:
-                fade[2].set_pos(screen_pos[fade[0]:fade[1]])
-            else:
-                fade[2].set_pos(screen_pos[fade[0]:]+screen_pos[:fade[1]])
-        # revers direction
-        else:
-            if fade[0] > fade[1]:
-                fade[2].set_pos(screen_pos[fade[1]:fade[0]])
-            else:
-                fade[2].set_pos(screen_pos[fade[1]:]+screen_pos[:fade[0]])
-
-        # set z layer pos
-        if self.background:
-            self.can_fade[self.poly_index][-1][2].set_to_background(True)
-        elif self.foreground:
-            self.can_fade[self.poly_index][-1][2].set_to_foreground(True)
-    
-    # get fade info
-    def get_fade_info(self, index: int = None):
-        if index is None:
-            index = self.fade_index
-        
-        return [index]+self.can_fade[self.poly_index][index][0:2]+[self.can_fade[self.poly_index][index][3]]
-
     # clear
     def clear(self):
         # polygon
@@ -599,18 +449,10 @@ class Bezier_Map(object):
         self.sel_back.clear()
         self.sel_edit.clear()
         self.sel_hide.clear()
-        self.sel_fade.clear()
         self.sel_up.clear()
         self.sel_down.clear()
 
         self.edit = False
-        self.fade = False
-        self.pre_adj_fade = None
-        self.fade_mode = "add_fade"
-        self.fade_index = None
-        self.fade_index_start = False
-
-        self.fade_indicator.clear()
 
         # z order
         self.z_order.clear()
@@ -622,11 +464,6 @@ class Bezier_Map(object):
         self.history_index = -1
 
         # --- canvas elements --- #
-        # fades
-        for index in self.can_fade:
-            for obj in index:
-                obj[2].clear()
-        self.can_fade.clear()
         # polygon points
         for index in self.can_bezier_points:
             for obj in index:
@@ -642,8 +479,9 @@ class Bezier_Map(object):
     # set to background
     def set_to_background(self, forever=False):
         # points
-        for obj in self.can_bezier_points:
-            obj.set_to_background(forever)
+        for i in range(len(self.can_bezier_points)):
+            for obj in self.can_bezier_points[i]:
+                obj.set_to_background(forever)
 
         # arrow
         self.can_poly_arrow.set_to_background(forever)
@@ -651,7 +489,6 @@ class Bezier_Map(object):
         # set sel box to background
         self.sel_edit.set_to_background(forever)
         self.sel_hide.set_to_background(forever)
-        self.sel_fade.set_to_background(forever)
         self.sel_up.set_to_background(forever)
         self.sel_down.set_to_background(forever)
         self.sel_back.set_to_background(forever)
@@ -672,7 +509,6 @@ class Bezier_Map(object):
         self.sel_back.set_to_foreground(forever)
         self.sel_edit.set_to_foreground(forever)
         self.sel_hide.set_to_foreground(forever)
-        self.sel_fade.set_to_foreground(forever)
         self.sel_up.set_to_foreground(forever)
         self.sel_down.set_to_foreground(forever)
 
@@ -686,12 +522,11 @@ class Bezier_Map(object):
             screen_pos = self.map.get_screen_pos(self.sel_map_pos)
 
             # update positions
-            self.sel_edit.set_pos(screen_pos[0]-48, screen_pos[1]-22)
-            self.sel_hide.set_pos(screen_pos[0]-24, screen_pos[1]-22)
-            self.sel_fade.set_pos(screen_pos[0], screen_pos[1]-22)
-            self.sel_up.set_pos(screen_pos[0]+24, screen_pos[1]-22)
-            self.sel_down.set_pos(screen_pos[0]+48, screen_pos[1]-22)
-            self.sel_back.set_pos(screen_pos[0]-60, screen_pos[1]-34)
+            self.sel_edit.set_pos(screen_pos[0]-36, screen_pos[1]-22)
+            self.sel_hide.set_pos(screen_pos[0]-12, screen_pos[1]-22)
+            self.sel_up.set_pos(screen_pos[0]+12, screen_pos[1]-22)
+            self.sel_down.set_pos(screen_pos[0]+36, screen_pos[1]-22)
+            self.sel_back.set_pos(screen_pos[0]-48, screen_pos[1]-34)
 
     # set position
     def set_pos(self, x: int, y: int):
@@ -720,38 +555,12 @@ class Bezier_Map(object):
         if len(self.can_poly) > 0:
             for i, val in enumerate(self.z_order):
                 screen_pos = [self.map.get_screen_pos(pos) for pos in self.bezier_poly[val]]
-                # update fade curve positions
-                for fade in self.can_fade[val]:
-                    # normal direction
-                    if not fade[3]:
-                        if fade[0] < fade[1]:
-                            fade[2].set_pos(screen_pos[fade[0]:fade[1]])
-                        else:
-                            fade[2].set_pos(screen_pos[fade[0]:]+screen_pos[:fade[1]])
-                    # revers direction
-                    else:
-                        if fade[0] > fade[1]:
-                            fade[2].set_pos(screen_pos[fade[1]:fade[0]])
-                        else:
-                            fade[2].set_pos(screen_pos[fade[1]:]+screen_pos[:fade[0]])
                 # update polygon position
                 self.can_poly[val].set_pos(screen_pos)
 
     # set zoom
     def set_zoom(self):
         self.set_pos(self.x, self.y)
-
-    # delete fade curve
-    def delete_fade(self, index: int = None):
-        if self.fade_index is not None and index is None:
-            index = self.fade_index
-
-        # erase fade
-        self.can_fade[self.poly_index][index][2].clear()
-        self.can_fade[self.poly_index].pop(index)
-
-        # update index
-        self.fade_index = None
 
     # delete point
     def delete_point(self):
@@ -849,76 +658,6 @@ class Bezier_Map(object):
                     self.add_history("add_point", [self.points_poly_map[self.poly_index][self.sel_point]])
                     history_changed = True
 
-            elif self.fade:
-                mouse_pos = [event.x, event.y]
-
-                # calculate nearest point to mouse
-                distance = [-1, float("inf")]
-                for i, point in enumerate(self.can_poly[self.poly_index].pos):
-                    if sqrt((mouse_pos[0]-point[0])**2+(mouse_pos[1]-point[1])**2) < distance[1]:
-                        distance = [i, sqrt((mouse_pos[0]-point[0])**2+(mouse_pos[1]-point[1])**2)]
-
-                # add new fade curve
-                if self.fade_index is None:
-                    # check if old fade curve is being selected
-                    for i, obj in enumerate(self.can_fade[self.poly_index]):
-                        # starting point selected
-                        if abs(obj[0]-distance[0]) < 10:
-                            self.fade_index = i
-                            self.fade_index_start = True
-
-                            # update fade_mode
-                            self.fade_mode = "adj_fade"
-                            self.pre_adj_fade = self.get_fade_info()
-                            break
-                        # ending point selected
-                        elif abs(obj[1]-distance[0]) < 10:
-                            self.fade_index = i
-                            self.fade_index_start = False
-
-                            # update fade_mode
-                            self.fade_mode = "adj_fade"
-                            self.pre_adj_fade = self.get_fade_info()
-                            break
-                    # create new fade curve
-                    else:
-                        self.can_fade[self.poly_index].append([distance[0], distance[0]+1, Advanced_Lines(self.canvas, self.can_poly[self.poly_index].pos[distance[0]-1:distance[0]+1], 3, (0, 0, 0)), False])
-
-                        # set z layer pos
-                        if self.background:
-                            self.can_fade[self.poly_index][-1][2].set_to_background(True)
-                        elif self.foreground:
-                            self.can_fade[self.poly_index][-1][2].set_to_foreground(True)
-
-                        # update fade index / fade mode
-                        self.fade_index = len(self.can_fade[self.poly_index])-1
-                        self.fade_mode = "add_fade"
-
-                # add fade ending point
-                else:
-                    # starting point
-                    if self.fade_index_start:
-                        self.can_fade[self.poly_index][self.fade_index][0] = distance[0]
-                    # ending point
-                    else:
-                        self.can_fade[self.poly_index][self.fade_index][1] = distance[0]
-
-                        # add add fade to history
-                        if self.fade_mode == "add_fade":
-                            self.add_history(self.fade_mode, self.get_fade_info())
-                            history_changed = True
-
-                    # add adjust fade to history
-                    if self.fade_mode == "adj_fade":
-                        self.add_history(self.fade_mode, [self.fade_index]+self.get_fade_info()[1:]+self.pre_adj_fade[1:])
-                        self.pre_adj_fade = None
-                        history_changed = True
-
-                    # reset variables
-                    self.fade_index = None
-                    self.fade_index_start = False
-                    self.fade_mode = "add_fade"
-
             # sel box is pressed
             elif self.sel_back.is_pressed(event):
                 index = floor((event.x-self.sel_back.x)/24)
@@ -935,62 +674,20 @@ class Bezier_Map(object):
                     history_changed = True
 
                     self.hide_selected()
-                # add fade section
-                elif index == 2:
-                    self.fade_selected()
-                    # add to history
-                    self.add_history("fade_poly", [])
-                    history_changed = True
                 # up pressed
-                elif index == 3:
+                elif index == 2:
                     self.up_z_pos()
                     # add to history
                     self.add_history("up_z", [])
                     history_changed = True
                 # down pressed
-                elif index == 4:
+                elif index == 3:
                     self.down_z_pos()
                     # add to history
                     self.add_history("low_z", [])
                     history_changed = True
 
         return history_changed
-
-    # motion
-    def motion(self, event):
-        # get map position
-        if self.poly_index is not None and len(self.can_poly) > self.poly_index and self.fade:
-            mouse_pos = [event.x, event.y]
-
-            distance = [-1, float(inf)]
-            for i, point in enumerate(self.can_poly[self.poly_index].pos):
-                if sqrt((mouse_pos[0]-point[0])**2+(mouse_pos[1]-point[1])**2) < distance[1]:
-                    distance = [i, sqrt((mouse_pos[0]-point[0])**2+(mouse_pos[1]-point[1])**2)]
-
-            self.fade_indicator.set_pos(self.can_poly[self.poly_index].pos[distance[0]][0], self.can_poly[self.poly_index].pos[distance[0]][1])
-            self.fade_indicator.draw()
-
-            if self.fade_index is not None:
-                # change starting point
-                if self.fade_index_start:
-                    if abs(distance[0]-self.can_fade[self.poly_index][self.fade_index][1]) < 2:
-                        if self.can_fade[self.poly_index][self.fade_index][1]+2 < len(self.can_poly[self.poly_index].pos):
-                            distance[0] = self.can_fade[self.poly_index][self.fade_index][1]+2
-                        else:
-                            distance[0] = self.can_fade[self.poly_index][self.fade_index][1]-2
-
-                    self.can_fade[self.poly_index][self.fade_index][0] = distance[0]
-                # change ending point
-                else:
-                    if abs(distance[0]-self.can_fade[self.poly_index][self.fade_index][0]) < 2:
-                        if self.can_fade[self.poly_index][self.fade_index][0]+2 < len(self.can_poly[self.poly_index].pos):
-                            distance[0] = self.can_fade[self.poly_index][self.fade_index][0]+2
-                        else:
-                            distance[0] = self.can_fade[self.poly_index][self.fade_index][0]-2
-
-                    self.can_fade[self.poly_index][self.fade_index][1] = distance[0]
-
-                self.map.set_center(self.map.center[0], self.map.center[1])
 
     # move polygon point
     def move_point(self, event, pos: [int, int] = None):
@@ -1020,30 +717,6 @@ class Bezier_Map(object):
         self.point_movement_start = None
         self.point_movement = False
 
-    # fade selected
-    def fade_selected(self):
-        self.fade = True
-
-        # erase sel box
-        self.sel_map_pos = None
-        self.sel_back.clear()
-        self.sel_edit.clear()
-        self.sel_fade.clear()
-        self.sel_hide.clear()
-        self.sel_up.clear()
-        self.sel_down.clear()
-
-    # change fade direction
-    def change_fade_dir(self):
-        # change dir
-        if self.fade_index is not None and self.can_fade[self.poly_index][self.fade_index][3]:
-            self.can_fade[self.poly_index][self.fade_index][3] = False
-        elif self.fade_index is not None:
-            self.can_fade[self.poly_index][self.fade_index][3] = True
-
-        # update pos
-        self.map.set_center(self.map.center[0], self.map.center[1])
-
     # edit unselected
     def edit_unselected(self):
         self.edit = False
@@ -1066,15 +739,10 @@ class Bezier_Map(object):
         self.edit = True
         self.can_poly[self.poly_index].clear()
 
-        # erase fade curves
-        for obj in self.can_fade[self.poly_index]:
-            obj[2].clear()
-
         # erase sel box
         self.sel_map_pos = None
         self.sel_back.clear()
         self.sel_edit.clear()
-        self.sel_fade.clear()
         self.sel_hide.clear()
         self.sel_up.clear()
         self.sel_down.clear()
@@ -1212,8 +880,6 @@ class Bezier_Map(object):
         for i, obj in enumerate(self.points_poly_map[index]):
             components[1].append([[obj[0], obj[1]], True if type(self.can_bezier_points[index][i]) == Advanced_Rectangle else False])
 
-        components.append([[f[0], f[1], f[3]] for f in self.can_fade[index]])
-
         return components
 
     # delete polygon
@@ -1221,15 +887,11 @@ class Bezier_Map(object):
         # clear from screen
         for obj in self.can_bezier_points[self.poly_index]:
             obj.clear()
-        # erase fade
-        if len(self.can_poly) > self.poly_index:
-            for obj in self.can_fade[self.poly_index]:
-                obj[2].clear()
-            # erase polygon
-            self.can_poly[self.poly_index].clear()
-            self.can_fade.pop(self.poly_index)
         # clear can_poly arrow
         self.can_poly_arrow.clear()
+
+        # erase polygon itself
+        self.can_poly[self.poly_index].clear()
 
         # pop from list
         self.points_poly_map.pop(self.poly_index)
@@ -1251,12 +913,10 @@ class Bezier_Map(object):
         self.sel_back.clear()
         self.sel_edit.clear()
         self.sel_hide.clear()
-        self.sel_fade.clear()
         self.sel_up.clear()
         self.sel_down.clear()
 
-        # update edit/fade
-        self.fade = False
+        # update edit
         self.edit = False
 
         # set polygon/select index
@@ -1274,25 +934,16 @@ class Bezier_Map(object):
         # remove indication arrow
         self.can_poly_arrow.clear()
 
-        # remove fade point
-        self.fade_indicator.clear()
-        if self.fade_index is not None:
-            self.can_fade[self.poly_index][self.fade_index][2].clear()
-            self.can_fade[self.poly_index].pop(self.fade_index)
-            self.fade_index = None
-
         # erase sel box
         self.sel_map_pos = None
         self.sel_back.clear()
         self.sel_edit.clear()
         self.sel_hide.clear()
-        self.sel_fade.clear()
         self.sel_up.clear()
         self.sel_down.clear()
 
         # update poly index
         self.poly_index = None
-        self.fade = False
         self.edit = False
 
         self.map.set_center(self.map.center[0], self.map.center[1])
@@ -1311,9 +962,6 @@ class Bezier_Map(object):
             # edit mode is selected
             if self.edit:
                 self.edit_unselected()
-            # fade mode is selected
-            elif self.fade:
-                self.fade_unselect()
             # unselect polygon
             self.unselect_polygon()
 
@@ -1346,7 +994,6 @@ class Bezier_Map(object):
         # create new canvas object
         else:
             self.can_poly.append(Advanced_Polygon(self.canvas, screen_pos, self.poly_colors[poly_index], (0, 0, 0)))
-            self.can_fade.append([])
 
             # update z layer
             if self.background:

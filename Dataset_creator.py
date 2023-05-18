@@ -10,6 +10,7 @@ import ast
 
 from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image
 from Map import Map
+from Outline_Class import Outline_Generator
 
 
 class GUI(object):
@@ -37,6 +38,8 @@ class GUI(object):
 
         self.map.set_to_background(forever=True)
         self.map.draw()
+
+        self.outline_gen = Outline_Generator(self.map)
 
         # other parameters
         self.last_x = 0
@@ -82,15 +85,15 @@ class GUI(object):
         self.color_labels = []
 
         # label fields
-        self.label_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-(len(self.colors)*50)//2, self.WINDOW_SIZE[1]//2-75, len(self.colors)*50, 50, None, (240, 240, 240), 6)
+        self.label_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-(len(self.colors)*50)//2-38, self.WINDOW_SIZE[1]-75, len(self.colors)*50, 50, None, (240, 240, 240), 6)
         for i, txt in enumerate(zip(self.color_texts, self.colors)):
-            back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-(i*50)//2-5, self.WINDOW_SIZE[1]//2-70, 40, 40, txt[1], (240, 240, 240), 2)
-            text = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-(i*50)//2+15, self.WINDOW_SIZE[1]//2-50, txt[0], (0, 0, 0), self.F3, "center")
+            back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-(i*50)//2-33, self.WINDOW_SIZE[1]-70, 40, 40, txt[1], (240, 240, 240), 2)
+            text = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-(i*50)//2-23, self.WINDOW_SIZE[1]-50, txt[0], (0, 0, 0), self.F3, "center")
             self.color_labels.append([back, text])
 
-        # undo and redo parameters
-        self.actions_list = []
-        self.actions_index = -1
+        # outline edit button
+        self.outline_edit_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+(len(self.colors)*50)//2-13, self.WINDOW_SIZE[1]-75, 50, 50, None, (240, 240, 240), 6)
+        self.outline_edit_img = Advanced_Image(self.canvas, self.WINDOW_SIZE[0]//2+(len(self.colors)*50)//2+13, self.WINDOW_SIZE[1]//2-50, "Icons/Outline_edit_inactive.png", "center")
 
         # undo and redo buttons
         self.undo_but_back = Advanced_Rectangle(self.canvas, 0, 25, 25, 25, None, (240, 240, 240), 6)
@@ -140,8 +143,10 @@ class GUI(object):
         self.root.bind("<BackSpace>", self.backspace)
         self.root.bind("<Delete>", self.backspace)
         self.root.bind("<Key>", self.key)
-        self.root.bind("<KeyPress-c>", self.keypress)
-        self.root.bind("<KeyRelease-c>", self.keyrelease)
+        self.root.bind("<KeyPress-c>", self.keypress_c)
+        self.root.bind("<KeyRelease-c>", self.keyrelease_c)
+        self.root.bind("<KeyPress-s>", self.keypress_s)
+        self.root.bind("<KeyRelease-s>", self.keyrelease_s)
         self.root.bind("<Up>", self.up)
         self.root.bind("<Down>", self.down)
         self.root.bind("<Control-z>", self.control_z)
@@ -197,6 +202,10 @@ class GUI(object):
             value[0].draw()
             value[1].draw()
 
+        # draw outline edit button
+        self.outline_edit_back.draw()
+        self.outline_edit_img.draw()
+
         # draw map
         self.map.draw()
 
@@ -228,17 +237,17 @@ class GUI(object):
 
     # prepare everything for labeling
     def prep_labeling(self):
-        # clear start and end point
-        self.map.clear_circle("Starting Point")
-        self.map.clear_circle("Ending Point")
-        
         # center map
         self.map.add_offset(-self.map.x_offset, -self.map.y_offset, None, "b2")
         self.map.add_zoom(1-self.map.zoom)
 
         # get parameters for new image
-        self.ratio = self.distance/sqrt((self.start_point_pos[0]-self.end_point_pos[0])**2+(self.start_point_pos[1]-self.end_point_pos[1])**2)
-        self.map.add_bezier_map("Hole_map", 0, 0, self.colors)
+        if not self.map.bezier_map_exists("Hole_map"):
+            self.map.add_bezier_map("Hole_map", 0, 0, self.colors)
+
+        # higher the outline
+        self.map.set_lines_z_pos("Hole_Outline", len(self.map.order) - 1)
+        self.map.set_lines_z_pos("Hole_fade_Outline", len(self.map.order) - 1)
 
     # undo tool highlighting
     def undo_highlight(self):
@@ -255,19 +264,39 @@ class GUI(object):
                 self.map.circles["Starting Point"].set_color((200, 200, 200))
                 self.end_point_lab.draw()
 
-            # moving on to labeling
+                # turn next button to inactive
+                self.next_img.set_img("Icons/right-arrow_inactive.png")
+            # moving on to creating outline
             elif self.label_status == "Select Ending-point":
                 # apply length
                 self.distance = int(os.path.basename(self.file_path).split("-")[1])
                 self.hole_len_lab.set_text(f"Hole length: {self.distance}")
                 self.hole_len_lab.draw()
 
+                # clear start and end point
+                self.map.clear_circle("Starting Point")
+                self.map.clear_circle("Ending Point")
+
+                # change to edit mode
+                self.outline_edit_img.set_img("Icons/Outline_edit_active.png")
+
+                # create outline
+                par = int(os.path.basename(self.file_path).split("-")[2].split(".")[0])
+                self.ratio = self.distance/sqrt((self.start_point_pos[0]-self.end_point_pos[0])**2+(self.start_point_pos[1]-self.end_point_pos[1])**2)
+                self.outline_gen.generate_outline(par, self.start_point_pos, self.end_point_pos, self.ratio)
+
+                # update label status
+                self.label_status = "Outline"
+            # move on to labeling
+            elif self.label_status == "Outline":
+                self.outline_gen.disable_edit_mode()
+                self.outline_edit_img.set_img("Icons/Outline_edit_inactive.png")
                 # move on to labeling
                 self.prep_labeling()
                 self.label_status = "labeling"
 
-            # turn next button to inactive
-            self.next_img.set_img("Icons/right-arrow_inactive.png")
+                # turn next button to inactive
+                self.next_img.set_img("Icons/right-arrow_inactive.png")
         # button inactive
         else:
             # image has not been selected
@@ -322,12 +351,14 @@ class GUI(object):
             start_pos = copy.copy(self.start_point_pos)
             end_pos = copy.copy(self.end_point_pos)
 
-            # update colors, fade
+            # update colors
             norm_colors = copy.deepcopy([data.colors.index(data.poly_colors[i]) for i in reversed(data.z_order)])
-            norm_fade = copy.deepcopy([[[f_i[0], f_i[1], f_i[3]] for f_i in data.can_fade[z_i]] for z_i in reversed(data.z_order)])
+
+            # outline information
+            outline_points, outline_scale = self.outline_gen.get_data()
 
             # open the csv file and read all the rows
-            with open("Data_set/Dataset.csv", "r") as csv_file:
+            with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", "r") as csv_file:
                 csv_reader = csv.reader(csv_file)
                 rows = [row for row in csv_reader]
 
@@ -336,36 +367,36 @@ class GUI(object):
                 if len(row) > 0:
                     if os.path.basename(self.file_path)[0:6] == row[0]:
                         # modify rows
-                        rows[i] = [os.path.basename(self.file_path)[0:6], ratio, start_pos, end_pos, norm_points_poly, norm_fade, norm_colors]
+                        rows[i] = [os.path.basename(self.file_path)[0:6], ratio, start_pos, end_pos, norm_points_poly, norm_colors, outline_points, outline_scale]
                         # write rows to csv file
-                        with open("Data_set/Dataset.csv", 'w', newline='') as csv_file:
+                        with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", 'w', newline='') as csv_file:
                             csv_writer = csv.writer(csv_file)
                             csv_writer.writerows(rows)
                         break
             else:
                 # save new row
-                with open("Data_set/Dataset.csv", "a") as csv_file:
+                with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", "a") as csv_file:
                     csv_writer = csv.writer(csv_file)
-                    csv_writer.writerow([os.path.basename(self.file_path)[0:6], ratio, start_pos, end_pos, norm_points_poly, norm_fade, norm_colors])
+                    csv_writer.writerow([os.path.basename(self.file_path)[0:6], ratio, start_pos, end_pos, norm_points_poly, norm_colors, outline_points, outline_scale])
 
             # open the csv file and read all the rows
-            with open("Data_set/Dataset.csv", "r") as csv_file:
+            with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", "r") as csv_file:
                 csv_reader = csv.reader(csv_file)
                 rows = [row for row in csv_reader if row]
             # write rows to csv file
-            with open("Data_set/Dataset.csv", 'w', newline='') as csv_file:
+            with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", 'w', newline='') as csv_file:
                 csv_writer = csv.writer(csv_file)
                 csv_writer.writerows(rows)
 
     # select image but is pressed
     def select_image_but_press(self):
         # search for already saved data
-        with open("Data_set/Dataset.csv", "r") as csv_file:
+        with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", "r") as csv_file:
             csv_reader = csv.reader(csv_file)
             rows = [row[0] for row in csv_reader if len(row) > 0]
 
         # search for already saved files
-        file_list = [filename for filename in os.listdir("D:\\Ondrive\\OneDrive - Venusnet\\Golf_course_IMGs") if
+        file_list = [filename for filename in os.listdir("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\2. Schule\\Maturarbeit\\Golf_course_IMGs") if
                      rows.count(filename[0:6])]
 
         # define file types
@@ -383,9 +414,14 @@ class GUI(object):
             )
 
         # load Image
-        file = filedialog.askopenfilename(initialdir="D:\\Ondrive\\OneDrive - Venusnet\\Golf_course_IMGs", filetypes=filetypes)
+        file = filedialog.askopenfilename(initialdir="D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\2. Schule\\Maturarbeit\\Golf_course_IMGs", filetypes=filetypes)
         # assign file path
         if file != "":
+            # clear data
+            if self.map.bezier_map_exists("Hole_map"):
+                self.map.clear_bezier_map("Hole_map")
+            self.outline_gen.clear()
+
             self.file_path = file
 
             # there is data open popup
@@ -396,22 +432,6 @@ class GUI(object):
             # there is no data available
             else:
                 self.load_image()
-        # if no file is selected clear all
-        else:
-            # reset map
-            self.map.clear_all()
-
-            # reset labeling status
-            self.sel_file_text.set_text("Select Image")
-            self.label_status = "Select Image"
-
-            # reset all buttons
-            if self.undo_but_img.src == "Icons/undo_icon_active.png":
-                self.undo_but_img.set_img("Icons/undo_icon_inactive.png")
-            if self.redo_but_img.src == "Icons/redo_icon_active.png":
-                self.redo_but_img.set_img("Icons/redo_icon_inactive.png")
-            if self.next_img.src == "Icons/right-arrow.png":
-                self.next_img.set_img("Icons/right-arrow_inactive.png")
 
     # load data
     def load_from_csv(self):
@@ -419,11 +439,22 @@ class GUI(object):
         self.load_image()
 
         # open the csv file and read all the rows
-        with open("Data_set/Dataset.csv", "r") as csv_file:
+        with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", "r") as csv_file:
             csv_reader = csv.reader(csv_file)
             rows = [row for row in csv_reader if row and row[0] == os.path.basename(self.file_path)[0:6]]
 
-        data = [rows[0][0], float(rows[0][1]), ast.literal_eval(rows[0][2]), ast.literal_eval(rows[0][3]), ast.literal_eval(rows[0][4]), ast.literal_eval(rows[0][5]), ast.literal_eval(rows[0][6])]
+        # new data format
+        try:
+            data = [rows[0][0], float(rows[0][1]), ast.literal_eval(rows[0][2]), ast.literal_eval(rows[0][3]), ast.literal_eval(rows[0][4]), ast.literal_eval(rows[0][5]), ast.literal_eval(rows[0][6]), ast.literal_eval(rows[0][7])]
+        # old data format
+        except IndexError:
+            try:
+                data = [rows[0][0], float(rows[0][1]), ast.literal_eval(rows[0][2]), ast.literal_eval(rows[0][3]), ast.literal_eval(rows[0][4]), ast.literal_eval(rows[0][6])]
+            except IndexError:
+                data = [rows[0][0], float(rows[0][1]), ast.literal_eval(rows[0][2]), ast.literal_eval(rows[0][3]), ast.literal_eval(rows[0][4]), ast.literal_eval(rows[0][5])]
+
+        # set ratio
+        self.ratio = data[1]
 
         # starting point
         self.start_point_lab.set_text(f"Starting point: {round(data[2][0])}, {round(data[2][1])}")
@@ -442,10 +473,26 @@ class GUI(object):
 
         # create bezier map
         self.map.add_bezier_map("Hole_map", 0, 0, self.colors)
-        self.map.bezier_map["Hole_map"].load_data(data[4], data[5], data[6])
+        self.map.bezier_map["Hole_map"].load_data(data[4], data[5])
+
+        # update outline generator
+        if len(data) > 6:
+            self.outline_gen.load_data(data[1], data[6], data[7])
+            # reset outline edit button
+            self.outline_edit_img.set_img("Icons/Outline_edit_inactive.png")
+        else:
+            par = int(os.path.basename(self.file_path).split("-")[2].split(".")[0])
+            self.outline_gen.generate_outline(par, data[2], data[3], data[1])
+
+            # reset outline edit button
+            self.outline_edit_img.set_img("Icons/Outline_edit_active.png")
 
         # set mode to labeling mode
-        self.label_status = "labeling"
+        if len(data) > 6:
+            self.label_status = "labeling"
+        else:
+            self.label_status = "Outline"
+            self.next_img.set_img("Icons/right-arrow.png")
 
     # load image
     def load_image(self):
@@ -495,6 +542,7 @@ class GUI(object):
             self.click_offset = [event.x, event.y]
 
             self.button_pressed = self.map.button_1(event)
+            self.button_pressed = self.outline_gen.button_1(event)
 
             # select file button
             if self.sel_file_but.is_pressed(event):
@@ -507,8 +555,6 @@ class GUI(object):
                     self.set_dis_cha_pos()
                 # everything has been saved
                 else:
-                    if self.map.bezier_map_exists("Hole_map"):
-                        self.map.bezier_map["Hole_map"].clear()
                     self.select_image_but_press()
 
                 self.button_pressed = True
@@ -578,8 +624,22 @@ class GUI(object):
                 else:
                     self.set_notification("Select image, starting and ending point before labeling the image")
 
+            # outline edit button is pressed
+            elif self.outline_edit_back.is_pressed(event):
+                # enable edit mode
+                if self.outline_edit_img.src == "Icons/Outline_edit_inactive.png":
+                    self.outline_gen.enable_edit_mode()
+                    self.outline_edit_img.set_img("Icons/Outline_edit_active.png")
+                # disable edit mode
+                else:
+                    # next button click if necessary
+                    if self.label_status == "Outline":
+                        self.next_button_press()
+                    self.outline_gen.disable_edit_mode()
+                    self.outline_edit_img.set_img("Icons/Outline_edit_inactive.png")
+
             # map is pressed
-            elif not self.button_pressed and self.map.bezier_map_exists("Hole_map"):
+            elif not self.button_pressed and self.map.bezier_map_exists("Hole_map") and not self.outline_gen.edit_mode:
                 history = self.map.bezier_map["Hole_map"].button_1(event, self.label_tool)
                 if history and self.redo_but_img.src == "Icons\\redo_icon_active.png":
                     self.redo_but_img.set_img("Icons\\redo_icon_inactive.png")
@@ -605,16 +665,12 @@ class GUI(object):
             elif self.dis_cha_remove_but.is_pressed(event):
                 self.dis_cha = False
                 self.clear_dis_cha()
-                if self.map.bezier_map_exists("Hole_map"):
-                    self.map.bezier_map["Hole_map"].clear()
                 self.select_image_but_press()
             # save button is pressed
             elif self.dis_cha_save_but.is_pressed(event):
                 self.dis_cha = False
                 self.clear_dis_cha()
                 self.save()
-                if self.map.bezier_map_exists("Hole_map"):
-                    self.map.bezier_map["Hole_map"].clear()
                 self.select_image_but_press()
 
         elif self.load_data:
@@ -762,10 +818,14 @@ class GUI(object):
             self.set_load_data_pos()
 
         # re place labeling components
-        self.label_back.set_pos(self.WINDOW_SIZE[0]//2-(len(self.colors)*50)//2, self.WINDOW_SIZE[1]-75)
+        self.label_back.set_pos(self.WINDOW_SIZE[0]//2-(len(self.colors)*50)//2-38, self.WINDOW_SIZE[1]-75)
         for i, value in enumerate(self.color_labels):
-            value[0].set_pos(self.WINDOW_SIZE[0]//2-(len(self.colors)*50)//2+(i*50)+5, self.WINDOW_SIZE[1]-70)
-            value[1].set_pos(self.WINDOW_SIZE[0]//2-(len(self.colors)*50)//2+(i*50)+25, self.WINDOW_SIZE[1]-50)
+            value[0].set_pos(self.WINDOW_SIZE[0]//2-(len(self.colors)*50)//2+(i*50)-33, self.WINDOW_SIZE[1]-70)
+            value[1].set_pos(self.WINDOW_SIZE[0]//2-(len(self.colors)*50)//2+(i*50)-13, self.WINDOW_SIZE[1]-50)
+
+        # re place outline edit button
+        self.outline_edit_back.set_pos(self.WINDOW_SIZE[0]//2+(len(self.colors)*50)//2-13, self.WINDOW_SIZE[1]-75)
+        self.outline_edit_img.set_pos(self.WINDOW_SIZE[0]//2+(len(self.colors)*50)//2+13, self.WINDOW_SIZE[1]-50)
 
         # re place map center
         self.map.set_center(self.WINDOW_SIZE[0]//2, self.WINDOW_SIZE[1]//2)
@@ -780,8 +840,8 @@ class GUI(object):
             self.last_x = event.x
             self.last_y = event.y
 
-            if self.map.bezier_map_exists("Hole_map"):
-                self.map.bezier_map["Hole_map"].motion(event)
+        # outline generator motion
+        self.outline_gen.motion(event)
 
     # track mouse movement while mousewheel is pressed
     def b2_motion(self, event):
@@ -796,6 +856,9 @@ class GUI(object):
         if not self.dis_cha and not self.load_data:
             # set map offset
             self.map.add_offset(event.x-self.last_x, event.y-self.last_y, event, "b1")
+
+            # outline gen motion
+            self.outline_gen.b1_motion(event)
 
             if self.map.bezier_map_exists("Hole_map"):
                 self.map.bezier_map["Hole_map"].scale_circle(event)
@@ -821,15 +884,6 @@ class GUI(object):
                         self.redo_but_img.set_img("Icons\\redo_icon_inactive.png")
                     if self.undo_but_img.src == "Icons\\undo_icon_inactive.png":
                         self.undo_but_img.set_img("Icons\\undo_icon_active.png")
-                # unselect fade
-                elif self.map.bezier_map["Hole_map"].fade:
-                    self.map.bezier_map["Hole_map"].fade_unselect()
-                    # add to history
-                    self.map.bezier_map["Hole_map"].add_history("unfade_poly", [])
-                    if self.redo_but_img.src == "Icons\\redo_icon_active.png":
-                        self.redo_but_img.set_img("Icons\\redo_icon_inactive.png")
-                    if self.undo_but_img.src == "Icons\\undo_icon_inactive.png":
-                        self.undo_but_img.set_img("Icons\\undo_icon_active.png")
                 # unselect polygon
                 else:
                     # add to history
@@ -843,6 +897,8 @@ class GUI(object):
 
     # backspace event
     def backspace(self, event):
+        self.outline_gen.delete(event)
+
         if not self.dis_cha and not self.load_data:
             # delete bezier point
             if self.map.bezier_map_exists("Hole_map") and self.map.bezier_map["Hole_map"].edit:
@@ -855,17 +911,6 @@ class GUI(object):
                 if self.undo_but_img.src == "Icons\\undo_icon_inactive.png":
                     self.undo_but_img.set_img("Icons\\undo_icon_active.png")
 
-            # delete fade curve
-            elif self.map.bezier_map_exists("Hole_map") and self.map.bezier_map["Hole_map"].fade:
-                # add to history
-                self.map.bezier_map["Hole_map"].add_history("del_fade", self.map.bezier_map["Hole_map"].pre_adj_fade)
-                self.map.bezier_map["Hole_map"].pre_adj_fade = None
-                if self.redo_but_img.src == "Icons\\redo_icon_active.png":
-                    self.redo_but_img.set_img("Icons\\redo_icon_inactive.png")
-                if self.undo_but_img.src == "Icons\\undo_icon_inactive.png":
-                    self.undo_but_img.set_img("Icons\\undo_icon_active.png")
-
-                self.map.bezier_map["Hole_map"].delete_fade()
             # delete polygon
             elif self.map.bezier_map_exists("Hole_map") and self.map.bezier_map["Hole_map"].poly_index is not None:
                 # add to history
@@ -905,19 +950,6 @@ class GUI(object):
                         self.undo_but_img.set_img("Icons\\undo_icon_active.png")
 
                     self.map.bezier_map["Hole_map"].hide_selected()
-                # fade selected
-                if event.char == "f":
-                    self.map.bezier_map["Hole_map"].fade_selected()
-
-                    # add to history
-                    self.map.bezier_map["Hole_map"].add_history("fade_poly", [])
-                    if self.redo_but_img.src == "Icons\\redo_icon_active.png":
-                        self.redo_but_img.set_img("Icons\\redo_icon_inactive.png")
-                    if self.undo_but_img.src == "Icons\\undo_icon_inactive.png":
-                        self.undo_but_img.set_img("Icons\\undo_icon_active.png")
-                # change fade orientation
-                if self.map.bezier_map["Hole_map"].fade_index is not None and event.char == "d":
-                    self.map.bezier_map["Hole_map"].change_fade_dir()
 
             # not selected
             elif self.map.bezier_map_exists("Hole_map") and event.char == "h":
@@ -929,8 +961,14 @@ class GUI(object):
                 if self.undo_but_img.src == "Icons\\undo_icon_inactive.png":
                     self.undo_but_img.set_img("Icons\\undo_icon_active.png")
 
-    # key pressed
-    def keypress(self, event):
+            # outline reset
+            elif self.outline_gen.edit_mode and event.char == "r":
+                self.outline_gen.clear()
+                par = int(os.path.basename(self.file_path).split("-")[2].split(".")[0])
+                self.outline_gen.generate_outline(par, self.start_point_pos, self.end_point_pos, self.ratio)
+
+    # c key pressed
+    def keypress_c(self, event):
         if self.map.bezier_map_exists("Hole_map"):
             # toggle c key_press
             self.map.bezier_map["Hole_map"].c_key_pressed = True
@@ -945,12 +983,18 @@ class GUI(object):
                 if self.undo_but_img.src == "Icons\\undo_icon_inactive.png":
                     self.undo_but_img.set_img("Icons\\undo_icon_active.png")
 
-    # key released
-    def keyrelease(self, event):
-        if event.char == "c":
-            # toggle s key released
-            if self.map.bezier_map_exists("Hole_map"):
-                self.map.bezier_map["Hole_map"].c_key_pressed = False
+    # c key released
+    def keyrelease_c(self, event):
+        # toggle s key released
+        if self.map.bezier_map_exists("Hole_map"):
+            self.map.bezier_map["Hole_map"].c_key_pressed = False
+
+    # s key pressed
+    def keypress_s(self, event):
+        self.outline_gen.keypress_s(event)
+
+    def keyrelease_s(self, event):
+        self.outline_gen.keyrelease_s(event)
 
     # up arrow pressed
     def up(self, event):
