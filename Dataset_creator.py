@@ -8,7 +8,7 @@ from math import sqrt, floor
 import csv
 import ast
 
-from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image
+from Advanced_Canvas import Advanced_Rectangle, Advanced_Text, Advanced_Image, Advanced_Circle
 from Map import Map
 from Outline_Class import Outline_Generator
 
@@ -94,6 +94,10 @@ class GUI(object):
         # outline edit button
         self.outline_edit_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2+(len(self.colors)*50)//2-13, self.WINDOW_SIZE[1]-75, 50, 50, None, (240, 240, 240), 6)
         self.outline_edit_img = Advanced_Image(self.canvas, self.WINDOW_SIZE[0]//2+(len(self.colors)*50)//2+13, self.WINDOW_SIZE[1]//2-50, "Icons/Outline_edit_inactive.png", "center")
+
+        # c key
+        self.c_key_pressed = False
+        self.c_key_indicator = Advanced_Circle(self.canvas, 0, 0, 25, None, (255, 255, 255))
 
         # undo and redo buttons
         self.undo_but_back = Advanced_Rectangle(self.canvas, 0, 25, 25, 25, None, (240, 240, 240), 6)
@@ -614,9 +618,15 @@ class GUI(object):
                 if self.label_status == "labeling":
                     for i, value in enumerate(self.color_labels):
                         if value[0].is_pressed(event):
-                            self.label_tool = i
-                            self.undo_highlight()
-                            value[0].set_color(value[0].o)
+                            # unselect this color
+                            if self.label_tool == i:
+                                self.undo_highlight()
+                                self.label_tool = None
+                            # select another color one
+                            else:
+                                self.label_tool = i
+                                self.undo_highlight()
+                                value[0].set_color(value[0].o)
 
                             self.button_pressed = True
                             break
@@ -655,6 +665,7 @@ class GUI(object):
                 if (self.map.bezier_map["Hole_map"].poly_index is not None and len(self.map.bezier_map["Hole_map"].can_bezier_points[self.map.bezier_map["Hole_map"].poly_index]) == 1) or self.map.bezier_map["Hole_map"].circle_creation:
                     self.label_tool = None
                     self.undo_highlight()
+                    self.c_key_indicator.clear()
 
         elif self.dis_cha:
             # cancel button is pressed
@@ -843,6 +854,10 @@ class GUI(object):
         # outline generator motion
         self.outline_gen.motion(event)
 
+        # set c key indicator pos
+        if self.c_key_pressed:
+            self.c_key_indicator.set_pos(event.x, event.y)
+
     # track mouse movement while mousewheel is pressed
     def b2_motion(self, event):
         if not self.dis_cha and not self.load_data:
@@ -983,11 +998,22 @@ class GUI(object):
                 if self.undo_but_img.src == "Icons\\undo_icon_inactive.png":
                     self.undo_but_img.set_img("Icons\\undo_icon_active.png")
 
+            # c key is pressed down
+            if self.label_tool is not None:
+                self.c_key_pressed = True
+
+                self.c_key_indicator.set_pos(event.x, event.y)
+                self.c_key_indicator.draw()
+
     # c key released
     def keyrelease_c(self, event):
         # toggle s key released
         if self.map.bezier_map_exists("Hole_map"):
             self.map.bezier_map["Hole_map"].c_key_pressed = False
+
+            # c key released
+            self.c_key_pressed = False
+            self.c_key_indicator.clear()
 
     # s key pressed
     def keypress_s(self, event):

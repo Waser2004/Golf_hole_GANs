@@ -99,14 +99,17 @@ class Bezier_Map(object):
             action = self.history[self.history_index+1]
             # new polygon was added
             if action[0] == "new_poly":
+                if action[3] is not None:
+                    self.unselect_polygon()
                 self.create_new_poly(action[2][1], [action[2][0][0][0], action[2][0][0][1]])
             # circle was created
             elif action[0] == "cir_creation":
-                print(action)
                 self.create_circle(action[1], action[2], action[3])
                 self.finish_circle_creation()
             # polygon was selected
             elif action[0] == "sel_poly":
+                if action[2] is not None:
+                    self.unselect_polygon()
                 self.select_polygon(None, action[1])
             # edit mode was enabled
             elif action[0] == "edi_poly":
@@ -158,12 +161,17 @@ class Bezier_Map(object):
             if action[0] == "new_poly":
                 self.poly_index = action[1]
                 self.delete_polygon()
+                # select old polygon
+                if action[3] is not None:
+                    self.select_polygon(None, action[3])
             # circle was created
             elif action[0] == "cir_creation":
                 self.delete_polygon()
             # polygon was selected
             elif action[0] == "sel_poly":
                 self.unselect_polygon()
+                if action[2] is not None:
+                    self.select_polygon(None, action[2])
             # edit mode was enabled
             elif action[0] == "edi_poly":
                 self.edit_unselected()
@@ -597,7 +605,12 @@ class Bezier_Map(object):
         history_changed = False
 
         # create new polygon curve
-        if self.poly_index is None and color is not None:
+        if not self.edit and color is not None:
+            # unselect polygon
+            prev_selected = None
+            if self.poly_index is not None:
+                prev_selected = self.poly_index
+                self.unselect_polygon()
             # create a circle
             if self.c_key_pressed:
                 # toggle circle creation
@@ -613,16 +626,46 @@ class Bezier_Map(object):
                 self.create_new_poly(self.colors[color], event)
 
                 # add action to history
-                self.add_history("new_poly", [self.poly_index, [self.points_poly_map[self.poly_index], self.poly_colors[self.poly_index]]])
+                self.add_history("new_poly", [self.poly_index, [self.points_poly_map[self.poly_index], self.poly_colors[self.poly_index]], prev_selected])
+                history_changed = True
+
+        # sel box is pressed
+        elif self.sel_back.is_pressed(event) and not self.edit:
+            index = floor((event.x - self.sel_back.x) / 24)
+            # edit pressed
+            if index == 0:
+                self.edit_selected()
+                # add to history
+                self.add_history("edi_poly", [])
+                history_changed = True
+            # hide pressed
+            elif index == 1:
+                # add to history
+                self.add_history("hide_sel", [])
+                history_changed = True
+
+                self.hide_selected()
+            # up pressed
+            elif index == 2:
+                self.up_z_pos()
+                # add to history
+                self.add_history("up_z", [])
+                history_changed = True
+            # down pressed
+            elif index == 3:
+                self.down_z_pos()
+                # add to history
+                self.add_history("low_z", [])
                 history_changed = True
 
         # select polygon curve
-        elif self.poly_index is None and color is None:
+        elif color is None and not self.edit:
+            prev_selected = self.poly_index
             # select polygon
             self.select_polygon(event)
 
             # add event to history
-            self.add_history("sel_poly", [self.poly_index])
+            self.add_history("sel_poly", [self.poly_index, prev_selected])
             history_changed = True
 
         # add points to polygon curve
@@ -656,35 +699,6 @@ class Bezier_Map(object):
 
                     # add to history
                     self.add_history("add_point", [self.points_poly_map[self.poly_index][self.sel_point]])
-                    history_changed = True
-
-            # sel box is pressed
-            elif self.sel_back.is_pressed(event):
-                index = floor((event.x-self.sel_back.x)/24)
-                # edit pressed
-                if index == 0:
-                    self.edit_selected()
-                    # add to history
-                    self.add_history("edi_poly", [])
-                    history_changed = True
-                # hide pressed
-                elif index == 1:
-                    # add to history
-                    self.add_history("hide_sel", [])
-                    history_changed = True
-
-                    self.hide_selected()
-                # up pressed
-                elif index == 2:
-                    self.up_z_pos()
-                    # add to history
-                    self.add_history("up_z", [])
-                    history_changed = True
-                # down pressed
-                elif index == 3:
-                    self.down_z_pos()
-                    # add to history
-                    self.add_history("low_z", [])
                     history_changed = True
 
         return history_changed
@@ -891,7 +905,8 @@ class Bezier_Map(object):
         self.can_poly_arrow.clear()
 
         # erase polygon itself
-        self.can_poly[self.poly_index].clear()
+        if not self.edit:
+            self.can_poly[self.poly_index].clear()
 
         # pop from list
         self.points_poly_map.pop(self.poly_index)

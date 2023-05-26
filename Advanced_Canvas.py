@@ -12,7 +12,7 @@ class Advanced_Circle(object):
         self.y = y
         self.r = radius
         self.ol = list(color) if outline is None else list(outline)
-        self.c = list(color)
+        self.c = list(color) if color is not None else None
 
         self.object = None
 
@@ -22,7 +22,7 @@ class Advanced_Circle(object):
     # draw circle on the screen
     def draw(self):
         if self.object is None:
-            self.object = self.canvas.create_oval(self.x - self.r, self.y - self.r, self.x + self.r, self.y + self.r, outline=self.rgb_to_hex(self.ol), fill=self.rgb_to_hex(self.c))
+            self.object = self.canvas.create_oval(self.x - self.r, self.y - self.r, self.x + self.r, self.y + self.r, outline=self.rgb_to_hex(self.ol), fill=self.rgb_to_hex(self.c) if self.c is not None else None)
 
         # update z layer pos
         self.__update_z_pos()
