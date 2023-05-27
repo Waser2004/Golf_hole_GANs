@@ -34,6 +34,7 @@ class Data_converter(object):
             reader = csv.reader(csv_file)
             rows = [row for row in reader if row]
 
+        # convert data
         self.data = [
             [
                 row[0],
@@ -42,15 +43,20 @@ class Data_converter(object):
                 ast.literal_eval(row[3]),
                 ast.literal_eval(row[4]),
                 ast.literal_eval(row[5]),
-                ast.literal_eval(row[6])
+                ast.literal_eval(row[6]),
+                ast.literal_eval(row[7])
             ]
             for row in rows
         ]
         self.outlines = [[] for _ in self.data]
 
         # numpy arrays
-        self.poly_array = np.zeros((self.GRID_SIZE[1], self.GRID_SIZE[0]), dtype=np.int32)
-        self.fade_array = np.zeros((self.GRID_SIZE[1], self.GRID_SIZE[0]), dtype=np.int32)
+        self.color_array = np.zeros((self.GRID_SIZE[1], self.GRID_SIZE[0]), dtype=np.int32)
+        
+        # outline offsets
+        self.outline_curve_points = []
+        self.outline_curve_data = []
+        self.offset = 35
 
         # converted data dict
         self.converted_data = {}
@@ -109,36 +115,21 @@ class Data_converter(object):
                 points = np.array(self.outlines[index][i], dtype=np.int32)
                 points = points.reshape((-1, 1, 2))
                 # draw polygon
-                cv2.fillPoly(self.poly_array, [points], color=data[6][i]+1)
+                cv2.fillPoly(self.color_array, [points], color=data[5][i] + 1)
 
-                # draw fade
-                for fade_index, fade in enumerate(data[5][i]):
-                    # normal direction
-                    if not fade[2]:
-                        if fade[0] < fade[1]:
-                            fade_points = self.outlines[index][i][fade[0]:fade[1]]
-                        else:
-                            fade_points = self.outlines[index][i][fade[0]:] + self.outlines[index][i][:fade[1]]
-                    # revers direction
-                    else:
-                        if fade[0] > fade[1]:
-                            fade_points = self.outlines[index][i][fade[1]:fade[0]]
-                        else:
-                            fade_points = self.outlines[index][i][fade[1]:] + self.outlines[index][i][:fade[0]]
+            # calculate outline mask
+            points = np.array(self.calc_hole_outline(data, delta_x, delta_y), dtype=np.int32)
+            points = points.reshape((-1, 1, 2))
+            # create mask array
+            mask = np.zeros_like(self.color_array)
+            # draw polygon
+            cv2.fillPoly(mask, [points], color=1)
 
-                    points = np.array(fade_points, dtype=np.int32)
-                    # Draw lines between the points
-                    for p_index in range(len(points)-1):
-                        pt1 = points[p_index]
-                        pt2 = points[p_index + 1]
-                        cv2.line(self.fade_array, tuple(pt1), tuple(pt2), color=data[6][i]+1, thickness=1)
-
-            # delete fade lines that are not needed
-            mask = self.fade_array == self.poly_array
-            self.fade_array[mask == False] = 0
+            # apply outline mask
+            self.color_array = np.where(mask == 1, self.color_array, 0)
 
             # store data in variable
-            self.converted_data.update({f"{index}": [copy.deepcopy(self.poly_array), copy.deepcopy(self.fade_array)]})
+            self.converted_data.update({f"{index}": copy.deepcopy(self.color_array)})
 
         # return data
         return self.converted_data[f"{index}"]
@@ -164,6 +155,83 @@ class Data_converter(object):
                 polygon_data.append(pos)
 
         return polygon_data
+    
+    # calculate curve points
+    def calc_hole_outline(self, data, hole_delta_x, hole_delta_y):
+        # fill curve pints
+        self.outline_curve_points = [[0, 0]] + [[0, 0] for _ in range(len(data[6]) * 2)] + [[0, 0]]
+
+        for i, p in enumerate(data[6]):
+            # first points
+            if i == 0:
+                delta_x, delta_y = data[6][i + 1][0] - p[0], data[6][i + 1][1] - p[1]
+                distance = sqrt(delta_x ** 2 + delta_y ** 2)
+
+                # perpendicular offset
+                dx = - (delta_y * self.offset * data[7][i] / data[1]) / distance
+                dy = (delta_x * - dx) / delta_y if delta_y != 0 else self.offset * data[7][i] / data[1]
+                self.outline_curve_points[0] = [p[0] - dx, p[1] - dy]
+                self.outline_curve_points[2] = [p[0] + dx, p[1] + dy]
+
+                # parallel offset
+                dx = - (delta_x * self.offset * data[7][i] / data[1]) / distance
+                dy = - (delta_y * - dx) / delta_x if delta_x != 0 else self.offset * data[7][i] / data[1]
+                self.outline_curve_points[1] = [p[0] + dx, p[1] + dy]
+
+            # intermediate points
+            elif i != len(data[6]) - 1:
+                delta_x, delta_y = data[6][i + 1][0] - data[6][i - 1][0], data[6][i + 1][1] - data[6][i - 1][1]
+                distance = sqrt(delta_x ** 2 + delta_y ** 2)
+
+                # perpendicular offset
+                dx = - (delta_y * self.offset * data[7][i] / data[1]) / distance
+                dy = (delta_x * - dx) / delta_y if delta_y != 0 else self.offset * data[7][i] / data[1]
+                self.outline_curve_points[i + 2] = [p[0] + dx, p[1] + dy]
+                self.outline_curve_points[len(self.outline_curve_points) - i] = [p[0] - dx, p[1] - dy]
+
+            # last points
+            else:
+                delta_x, delta_y = p[0] - data[6][i - 1][0], p[1] - data[6][i - 1][1]
+                distance = sqrt(delta_x ** 2 + delta_y ** 2)
+
+                # perpendicular offset
+                dx = - (delta_y * self.offset * data[7][i] / data[1]) / distance
+                dy = (delta_x * - dx) / delta_y if delta_y != 0 else self.offset * data[7][i] / data[1]
+                self.outline_curve_points[len(data[6]) + 1] = [p[0] + dx, p[1] + dy]
+                self.outline_curve_points[len(data[6]) + 3] = [p[0] - dx, p[1] - dy]
+
+                # parallel offset
+                dx = - (delta_x * self.offset * data[7][i] / data[1]) / distance
+                dy = - (delta_y * - dx) / delta_x if delta_x != 0 else self.offset * data[7][i] / data[1]
+                self.outline_curve_points[len(data[6]) + 2] = [p[0] - dx, p[1] - dy]
+
+        # convert points positions
+        for p in self.outline_curve_points:
+            p[0] = (p[0] + hole_delta_x) * (data[1] / self.BOX_SIZE) + (self.GRID_SIZE[0] / 2)
+            p[1] = (p[1] + hole_delta_y) * (data[1] / self.BOX_SIZE) + (self.GRID_SIZE[1] / 2)
+
+        # return bezier outline
+        return self.__calc_hole_bezier()
+
+    # calculate polygon outline
+    def __calc_hole_bezier(self):
+        # ready up for bezier calculation
+        points = [self.outline_curve_points[-1]] + self.outline_curve_points + self.outline_curve_points[0:3]
+        outline_points = []
+
+        for i in range(len(points) - 4):
+            vector_points = [
+                points[i + 1],
+                self.__get_vector_points(points[i], points[i + 1], points[i + 2])[1],
+                self.__get_vector_points(points[i + 1], points[i + 2], points[i + 3])[0],
+                points[i + 2]
+            ]
+
+            # add bezier points to poly list
+            for pos in self.__calc_bezier(vector_points):
+                outline_points.append(pos)
+
+        return outline_points
 
     # get bezier vector points
     @staticmethod
