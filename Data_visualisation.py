@@ -9,9 +9,10 @@ from math import *
 
 
 class Data_Visualiser(object):
-    def __init__(self, image_size: [int, int]):
+    def __init__(self, image_size: [int, int], box_size: float):
         # set grid parameters
         self.IMAGE_SIZE = image_size
+        self.BOX_SIZE = box_size
 
         # colors
         self.colors = np.array([
@@ -39,7 +40,7 @@ class Data_Visualiser(object):
         image = self.colors[poly_data]
 
         # create fairway / tee texture
-        texture = self.create_diagonal_lines(6, [600, 400])
+        texture = self.create_diagonal_lines(6, poly_data.shape)
         # add texture to fairway
         image[(texture == 0) & np.all(image == self.colors[3], axis=2)] = [36, 168, 55]
         image = self.transform_1_to_2(image, 2, [36, 168, 55], self.colors[3])
@@ -86,11 +87,16 @@ class Data_Visualiser(object):
             # apply to image
             image = np.where(tree_texture == np.array([0, 0, 0], dtype=np.uint8), image, tree_texture)
 
+        # upscale image
+        image = resize(image, (self.IMAGE_SIZE[1], self.IMAGE_SIZE[0]), preserve_range=True, mode='constant').astype(np.int32)
+
         if hole_fade:
             # calculate opacity
-            hole_mask = np.where(poly_data != 0, 1, 0)
+            hole_mask = np.where(np.all(image == np.array([220, 220, 220]), axis=-1), 0, 1)
             hole_mask = self.calc_dist_map(hole_mask)
-            hole_mask = np.where(hole_mask > 10, 10, hole_mask) / 10
+
+            fade_dis = 10 / self.BOX_SIZE / (poly_data.shape[0] / image.shape[0])
+            hole_mask = np.where(hole_mask > fade_dis, fade_dis, hole_mask) / fade_dis
 
             # reshape opacity
             hole_mask = np.expand_dims(hole_mask, axis=2)
@@ -101,13 +107,13 @@ class Data_Visualiser(object):
             image = image.astype(np.int32)
 
         # upscale image
-        self.image = resize(image, (900, 600), preserve_range=True, mode='constant').astype(np.int32)
+        self.image = image
 
-        # # Convert the NumPy array to an image
-        # image = Image.fromarray(self.image.astype('uint8'))
-        #
-        # # Save the image to a file
-        # image.save('image.png')
+        # Convert the NumPy array to an image
+        image = Image.fromarray(self.image.astype('uint8'))
+
+        # Save the image to a file
+        image.save('image.png')
 
         plt.imshow(self.image)
         plt.show()

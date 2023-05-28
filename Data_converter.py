@@ -8,7 +8,7 @@ from math import *
 
 
 class Data_converter(object):
-    def __init__(self, grid_size: tuple[int, int], box_size: int):
+    def __init__(self, grid_size: tuple[int, int], box_size: float):
         # set grid parameters
         self.GRID_SIZE = grid_size
         self.BOX_SIZE = box_size
