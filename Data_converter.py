@@ -129,7 +129,7 @@ class Data_converter(object):
             self.color_array = np.where(mask == 1, self.color_array, 0)
 
             # store data in variable
-            self.converted_data.update({f"{index}": copy.deepcopy(self.color_array)})
+            self.converted_data.update({f"{index}": copy.deepcopy(self.color_array / 12)})
 
         # return data
         return self.converted_data[f"{index}"]

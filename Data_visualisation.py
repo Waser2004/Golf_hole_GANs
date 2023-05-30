@@ -109,14 +109,8 @@ class Data_Visualiser(object):
         # upscale image
         self.image = image
 
-        # Convert the NumPy array to an image
-        image = Image.fromarray(self.image.astype('uint8'))
-
-        # Save the image to a file
-        image.save('image.png')
-
-        plt.imshow(self.image)
-        plt.show()
+        # return image
+        return self.image
 
     # calculate distance
     @staticmethod
