@@ -32,7 +32,12 @@ class Data_converter(object):
         # load data
         with open("Data_set/Dataset.csv", "r") as csv_file:
             reader = csv.reader(csv_file)
-            rows = [row for row in reader if row]
+            real_rows = [row for row in reader if row]
+
+        # load data
+        with open("Data_set/Procedural_Dataset.csv", "r") as csv_file:
+            reader = csv.reader(csv_file)
+            procedural_rows = [row for row in reader if row]
 
         # convert data
         self.data = [
@@ -46,9 +51,24 @@ class Data_converter(object):
                 ast.literal_eval(row[6]),
                 ast.literal_eval(row[7])
             ]
-            for row in rows
+            for row in real_rows
+        ]
+        # convert data
+        self.procedural_data = [
+            [
+                row[0],
+                float(row[1]),
+                ast.literal_eval(row[2]),
+                ast.literal_eval(row[3]),
+                ast.literal_eval(row[4]),
+                ast.literal_eval(row[5]),
+                ast.literal_eval(row[6]),
+                ast.literal_eval(row[7])
+            ]
+            for row in procedural_rows
         ]
         self.outlines = [[] for _ in self.data]
+        self.procedural_outlines = [[] for _ in self.procedural_data]
 
         # numpy arrays
         self.color_array = np.zeros((self.GRID_SIZE[1], self.GRID_SIZE[0]), dtype=np.int32)
@@ -60,6 +80,7 @@ class Data_converter(object):
 
         # converted data dict
         self.converted_data = {}
+        self.procedural_converted_data = {}
 
     # convert all data
     def convert_all(self):
@@ -70,9 +91,19 @@ class Data_converter(object):
         # return data
         return list(self.converted_data.values())
 
+    # convert all procedural data
+    def convert_all_procedural(self):
+        # convert data
+        for index, data in enumerate(self.procedural_data):
+            self.convert_procedural(data=data)
+
+        # return data
+        return list(self.procedural_converted_data.values())
+
     # convert one data set
     def convert(self, data=None, index: int = None):
         assert data is not None or index is not None, "No data specified set an index or hand over data"
+        self.color_array *= 0
 
         # convert index to data
         if data is None and index is not None:
@@ -129,10 +160,75 @@ class Data_converter(object):
             self.color_array = np.where(mask == 1, self.color_array, 0)
 
             # store data in variable
-            self.converted_data.update({f"{index}": copy.deepcopy(self.color_array / 12)})
+            self.converted_data.update({f"{index}": copy.deepcopy(self.color_array)})
 
         # return data
         return self.converted_data[f"{index}"]
+
+    # convert one data set
+    def convert_procedural(self, data=None, index: int = None):
+        assert data is not None or index is not None, "No data specified set an index or hand over data"
+        self.color_array *= 0
+
+        # convert index to data
+        if data is None and index is not None:
+            data = self.procedural_data[index]
+        # set index
+        if data is not None:
+            index = self.procedural_data.index(data)
+
+        # only convert data if it hadn't been converted yet
+        if f"{index}" not in self.procedural_converted_data:
+            for d_index, d in enumerate(data[4]):
+                # calculate outline
+                self.procedural_outlines[index].append(self.calc_outline(d))
+
+            # center the outlines
+            min_x = min([pos[0] for outline in self.procedural_outlines[index] for pos in outline])
+            max_x = max([pos[0] for outline in self.procedural_outlines[index] for pos in outline])
+            min_y = min([pos[1] for outline in self.procedural_outlines[index] for pos in outline])
+            max_y = max([pos[1] for outline in self.procedural_outlines[index] for pos in outline])
+
+            # delta x/y
+            delta_x = - ((max_x - min_x) / 2 + min_x)
+            delta_y = - ((max_y - min_y) / 2 + min_y)
+
+            # calculate offset
+            for i, outline in enumerate(self.procedural_outlines[index]):
+                self.procedural_outlines[index][i] = [[pos[0] + delta_x, pos[1] + delta_y] for pos in outline]
+
+                # convert map data to meters
+                for p_index, pos in enumerate(self.procedural_outlines[index][i]):
+                    # scale outlines
+                    self.procedural_outlines[index][i][p_index][0] *= data[1] / self.BOX_SIZE
+                    self.procedural_outlines[index][i][p_index][1] *= data[1] / self.BOX_SIZE
+
+                    # translate to canvas center
+                    self.procedural_outlines[index][i][p_index][0] += self.GRID_SIZE[0] / 2
+                    self.procedural_outlines[index][i][p_index][1] += self.GRID_SIZE[1] / 2
+
+                # convert outline to cv2 format points
+                points = np.array(self.procedural_outlines[index][i], dtype=np.int32)
+                points = points.reshape((-1, 1, 2))
+                # draw polygon
+                cv2.fillPoly(self.color_array, [points], color=data[5][i] + 1)
+
+            # calculate outline mask
+            points = np.array(self.calc_hole_outline(data, delta_x, delta_y), dtype=np.int32)
+            points = points.reshape((-1, 1, 2))
+            # create mask array
+            mask = np.zeros_like(self.color_array)
+            # draw polygon
+            cv2.fillPoly(mask, [points], color=1)
+
+            # apply outline mask
+            self.color_array = np.where(mask == 1, self.color_array, 0)
+
+            # store data in variable
+            self.procedural_converted_data.update({f"{index}": copy.deepcopy(self.color_array)})
+
+        # return data
+        return self.procedural_converted_data[f"{index}"]
 
     # calculate polygon outline
     def calc_outline(self, data):
@@ -158,7 +254,7 @@ class Data_converter(object):
     
     # calculate curve points
     def calc_hole_outline(self, data, hole_delta_x, hole_delta_y):
-        # fill curve pints
+        # fill curve points
         self.outline_curve_points = [[0, 0]] + [[0, 0] for _ in range(len(data[6]) * 2)] + [[0, 0]]
 
         for i, p in enumerate(data[6]):
