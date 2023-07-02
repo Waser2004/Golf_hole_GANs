@@ -11,7 +11,7 @@ from Advanced_Canvas import Advanced_Lines, Advanced_Polygon
 
 
 class Golf_Hole_Generator(object):
-    def __init__(self, canvas: Canvas):
+    def __init__(self, canvas: Canvas = None):
         self.canvas = canvas
         self.SIZE = [600, 600]
         self.center = [300, 300]
@@ -79,21 +79,72 @@ class Golf_Hole_Generator(object):
         self.outline_widget = Advanced_Lines(self.canvas, [], 1, (0, 0, 0))
         self.polygon_widgets = []
 
+    # reset all variables
+    def reset(self):
+        # outline parameters
+        self.outline_points.clear()
+        self.outline_points_scale.clear()
+        self.outline_curve_points.clear()
+        self.outline_curve.clear()
+        self.center_outline_curve_points.clear()
+
+        # green outlines
+        self.green_2_curve_points.clear()
+
+        self.green_5_curve_points.clear()
+        self.green_6_curve_points.clear()
+        self.green_7_curve_points.clear()
+
+        self.green_12_curve_points.clear()
+
+        self.green_14_curve_points.clear()
+
+        # tee outline
+        self.tee_outline_curve_points.clear()
+        self.tee_5_curve_points.clear()
+
+        # bunker outline
+        self.bunker_5_curve_points.clear()
+
+        # water outlines
+        self.water_12_curve_points.clear()
+
+        # path parameters
+        self.path = None
+        self.path_curve_points.clear()
+
+        # polygon outlines
+        self.polygon_curve_12_points.clear()
+
+        # polygon parameters
+        self.polygon_colors.clear()
+        self.polygon_z_pos.clear()
+        self.polygon_curve_points.clear()
+        self.polygon_curve_points_type.clear()
+        self.polygon_curve.clear()
+
+        # widgets
+        self.outline_widget = Advanced_Lines(self.canvas, [], 1, (0, 0, 0))
+        self.polygon_widgets.clear()
+
     # par [integer], distance [meter], dog_leg [meter]
     def generate_hole(self, par: int = 4, distance: int = 400, dog_leg: int = 0, visualise: bool = False, seed: int = 1):
         assert distance > 110, f"Distance of Golfhole has to be longer than 110m it is currently {distance}"
         assert 2 < par < 7, f"Par should be between 3 and 6 it is currently {par}"
         assert dog_leg < distance / 2, f"to strong dog leg, dogleg has to be smaller than {distance / 2}"
-        
+
+        # reset all variables
+        self.reset()
+
         # set seed
         random.seed(seed)
 
         # save to csv
-        with open("Data_set/Procedural_Dataset.csv", "r") as csv_file:
-            csv_reader = csv.reader(csv_file)
-            rows = [row for row in csv_reader if int(row[0]) == seed]
+        # with open("Data_set/Procedural_Dataset.csv", "r") as csv_file:
+        #     csv_reader = csv.reader(csv_file)
+        #     rows = [row for row in csv_reader if int(row[0]) == seed]
 
-        if len(rows) == 0:
+        if True:
             # generate
             self.__generate_outline(
                 par=par,
@@ -104,36 +155,37 @@ class Golf_Hole_Generator(object):
             self.__generate_tee(
                 offset_angle=random.randint(-4, 4)
             )
-            if random.randint(0, 10) <= 4:
-                self.__generate_path(
-                    par=par,
-                    align_side="left" if random.randint(0, 1) == 0 else "right"
-                )
-            self.__generate_water(
-                stream_count=random.randint(1, 2) if random.randint(0, 1) == 1 else 0,
-                lake_count=random.randint(1, 2) if random.randint(0, 3) == 3 else 0,
-                distance=distance
-            )
-            self.__generate_buildings(
-                random.randint(1, 2) if random.randint(0, 2) == 0 else 0
-            )
-            self.__generate_bunker(
-                green_bunker_count=random.randint(1, 3),
-                fairway_bunker_count=random.randint(1, 4),
-                par=par,
-                distance=distance
-            )
-            self.__generate_rough(
-                count=random.randint(0, 3),
-                distance=distance
-            )
-            self.__generate_out(1)
+            # if random.randint(0, 10) <= 4:
+            #     self.__generate_path(
+            #         par=par,
+            #         align_side="left" if random.randint(0, 1) == 0 else "right"
+            #     )
+            # self.__generate_water(
+            #     stream_count=random.randint(1, 2) if random.randint(0, 1) == 1 else 0,
+            #     lake_count=random.randint(1, 2) if random.randint(0, 3) == 3 else 0,
+            #     distance=distance
+            # )
+            # self.__generate_buildings(
+            #     random.randint(1, 2) if random.randint(0, 2) == 0 else 0
+            # )
+            # self.__generate_bunker(
+            #     green_bunker_count=random.randint(1, 3),
+            #     fairway_bunker_count=random.randint(1, 4),
+            #     par=par,
+            #     distance=distance
+            # )
+            # self.__generate_rough(
+            #     count=random.randint(0, 3),
+            #     distance=distance
+            # )
+            # self.__generate_out(1)
             self.__generate_fairway(
                 par=par
             )
-            self.__generate_trees(
-                tree_count=random.randint(0, 20)
-            )
+            # self.__generate_trees(
+            #     tree_count=random.randint(0, 20)
+            # )
+            # print("semi rough")
             self.__generate_semi_rough()
 
             # visualise
@@ -151,15 +203,14 @@ class Golf_Hole_Generator(object):
                 curve_points,
                 curve_colors,
                 self.outline_points,
-                self.outline_points_scale
+                self.outline_points_scale,
+                par,
+                distance
             ]
-            with open("Data_set/Procedural_Dataset.csv", "r") as csv_file:
-                csv_reader = csv.reader(csv_file)
-                rows = [row for row in csv_reader]
-            with open("Data_set/Procedural_Dataset.csv", "w", newline='') as csv_file:
+
+            with open("Data_set/Procedural_Dataset.csv", "a", newline='') as csv_file:
                 csv_writer = csv.writer(csv_file)
-                rows.append(data)
-                csv_writer.writerows(rows)
+                csv_writer.writerow(data)
 
     def get_curve_points(self):
         # calc indices
@@ -174,7 +225,6 @@ class Golf_Hole_Generator(object):
             for i in z_val:
                 # calculate polygon outline
                 points = [[list(p), t] for p, t in zip(self.polygon_curve_points[i], self.polygon_curve_points_type[i])]
-                print(points)
                 curve_points.append(points)
                 curve_colors.append(self.colors.tolist().index(self.polygon_colors[i].tolist()))
 
@@ -184,17 +234,17 @@ class Golf_Hole_Generator(object):
     def __generate_outline(self, par: int, distance: int, dog_leg: int):
         # generate starting and ending point
         self.outline_points.append([0, distance / 2])
-        self.outline_points_scale.append(0.5)  
+        self.outline_points_scale.append(0.5)
         self.outline_points.append([0, - distance / 2])
-        self.outline_points_scale.append(1)  
+        self.outline_points_scale.append(1)
 
-        scale = random.randint(120, 150) / 100  
+        scale = random.randint(120, 150) / 100
         # generate sub points
         for i in range(par - 3):
             # calculate offsets
-            x_offset = random.randint(-10, 10) + dog_leg  
-            y_offset = random.randint(-20, 20)  
-            points_scale = scale * random.randint(95, 105) / 100  
+            x_offset = random.randint(-10, 10) + dog_leg
+            y_offset = random.randint(-20, 20)
+            points_scale = scale * random.randint(95, 105) / 100
             # save points
             self.outline_points.insert(1 + i, [x_offset, distance / 2 - distance / (par - 2) * (i + 1) + y_offset])
             self.outline_points_scale.insert(1 + i, points_scale)
@@ -216,7 +266,8 @@ class Golf_Hole_Generator(object):
 
     # calculate curve points; line [line or outline], points [list[x, y points]], points_scale [float], width [meter]
     @staticmethod
-    def __calc_outline_curve_points(line: bool = False, points: list[list[int, int]] = None, points_scale: list[int] = None, width: int = 5):
+    def __calc_outline_curve_points(line: bool = False, points: list[list[int, int]] = None,
+                                    points_scale: list[int] = None, width: int = 5):
         # outline parameters
         if not line:
             curve_points = [[0, 0]] + [[0, 0] for _ in range(len(points) * 2)] + [[0, 0]]
@@ -312,10 +363,10 @@ class Golf_Hole_Generator(object):
     # generate green
     def __generate_green(self):
         # set parameters
-        green_height = random.randint(20, 30)  
-        green_width = random.randint(20, 30)  
+        green_height = random.randint(20, 30)
+        green_width = random.randint(20, 30)
         resolution = 360 // 10
-        noise = self.__generate_noise(random.randint(2, 7), resolution, substeps=random.randint(1, 3))  
+        noise = self.__generate_noise(random.randint(2, 7), resolution, substeps=random.randint(1, 3))
         center = self.outline_points[-1]
 
         # polygon outline
@@ -388,10 +439,10 @@ class Golf_Hole_Generator(object):
         tee_width = random.randint(5, 7)
 
         # round white tee
-        if random.randint(0, 3) <= 2:  
+        if random.randint(0, 3) <= 2:
             # set tee parameters
             w_center = [self.outline_points[0][0], self.outline_points[0][1]]
-            w_radius = floor(tee_width / 2) + random.randint(0, 2)  
+            w_radius = floor(tee_width / 2) + random.randint(0, 2)
 
             # height
             w_height = w_radius * 2
@@ -410,8 +461,8 @@ class Golf_Hole_Generator(object):
         else:
             # set tee parameters
             w_center = [self.outline_points[0][0], self.outline_points[0][1]]
-            w_height = tee_width + random.randint(-1, 1)  
-            w_width = random.randint(8, 12)  
+            w_height = tee_width + random.randint(-1, 1)
+            w_width = random.randint(8, 12)
 
             # calculate white tee curve points
             w_tee_curve_points, w_tee_curve_points_type = self.__generate_rectangular_tee(
@@ -456,12 +507,12 @@ class Golf_Hole_Generator(object):
 
         # merge yellow and blue tee
         if random.randint(0, 7) <= 5:
-            b_height = yb_height = random.randint(30, 35)  
-            yb_width = tee_width + random.randint(-1, 1)  
-            w_yb_dis = random.randint(5, 15)  
+            b_height = yb_height = random.randint(30, 35)
+            yb_width = tee_width + random.randint(-1, 1)
+            w_yb_dis = random.randint(5, 15)
             b_center = yb_center = [
                 w_center[0] - sin(rotation) * (yb_height / 2 + w_yb_dis + w_height / 2) + random.randint(-5, 5),
-                
+
                 w_center[1] - cos(rotation) * (yb_height / 2 + w_yb_dis + w_height / 2)
             ]
 
@@ -508,12 +559,12 @@ class Golf_Hole_Generator(object):
         # yellow and blue as unique tees
         else:
             # yellow tee
-            y_height = random.randint(18, 22)  
-            y_width = tee_width + random.randint(-1, 1)  
-            w_y_dis = random.randint(5, 15)  
+            y_height = random.randint(18, 22)
+            y_width = tee_width + random.randint(-1, 1)
+            w_y_dis = random.randint(5, 15)
             y_center = [
                 w_center[0] - sin(rotation) * (y_height / 2 + w_y_dis + w_height / 2) + random.randint(-5, 5),
-                
+
                 w_center[1] - cos(rotation) * (y_height / 2 + w_y_dis + w_height / 2)
             ]
 
@@ -559,12 +610,12 @@ class Golf_Hole_Generator(object):
             self.polygon_curve_points_type.append(y_tee_curve_points_type)
 
             # blue
-            b_height = random.randint(18, 22)  
-            b_width = tee_width + random.randint(-1, 1)  
-            y_b_dis = random.randint(5, 15)  
+            b_height = random.randint(18, 22)
+            b_width = tee_width + random.randint(-1, 1)
+            y_b_dis = random.randint(5, 15)
             b_center = [
                 y_center[0] - sin(rotation) * (b_height / 2 + y_b_dis + y_height / 2) + random.randint(-5, 5),
-                
+
                 y_center[1] - cos(rotation) * (b_height / 2 + y_b_dis + y_height / 2)
             ]
 
@@ -610,13 +661,13 @@ class Golf_Hole_Generator(object):
             self.polygon_curve_points_type.append(b_tee_curve_points_type)
 
         # round red tee
-        if random.randint(0, 3) <= 2:  
+        if random.randint(0, 3) <= 2:
             # set tee parameters
-            r_radius = floor(tee_width / 2) + random.randint(0, 2)  
-            b_r_dis = random.randint(5, 15)  
+            r_radius = floor(tee_width / 2) + random.randint(0, 2)
+            b_r_dis = random.randint(5, 15)
             r_center = [
                 b_center[0] - sin(rotation) * (r_radius + b_r_dis + b_height / 2) + random.randint(-5, 5),
-                
+
                 b_center[1] - cos(rotation) * (r_radius + b_r_dis + b_height / 2)
             ]
             r_height = r_radius * 2
@@ -634,12 +685,12 @@ class Golf_Hole_Generator(object):
         # rectangular red tee
         else:
             # set tee parameters
-            r_height = tee_width + random.randint(-1, 1)  
-            r_width = random.randint(8, 12)  
-            b_r_dis = random.randint(5, 15)  
+            r_height = tee_width + random.randint(-1, 1)
+            r_width = random.randint(8, 12)
+            b_r_dis = random.randint(5, 15)
             r_center = [
                 b_center[0] - sin(rotation) * (r_height / 2 + b_r_dis + b_height / 2) + random.randint(-5, 5),
-                
+
                 b_center[1] - cos(rotation) * (r_height / 2 + b_r_dis + b_height / 2)
             ]
 
@@ -760,7 +811,7 @@ class Golf_Hole_Generator(object):
 
     # par [integer], align_side ["left" or "right"]
     def __generate_path(self, par: int, align_side: str = "left"):
-        path_offset = random.randint(0, 10)  
+        path_offset = random.randint(0, 10)
         self.path = align_side
 
         # get line points
@@ -811,12 +862,12 @@ class Golf_Hole_Generator(object):
                     150 if distance > 250 else 80,
                     distance - 100 if distance > 250 else distance - 30
                 ]
-                y_pos = self.outline_points[0][1] - random.randint(stream_range[0], stream_range[1])  
-                left_y_offset = random.randint(-20, 20)  
-                right_y_offset = random.randint(-20, 20)  
-                res = random.randint(10, 15)  
-                noise = self.__generate_noise(20, res, substeps=random.randint(2, 5))  
-                width = random.randint(3, 8)  
+                y_pos = self.outline_points[0][1] - random.randint(stream_range[0], stream_range[1])
+                left_y_offset = random.randint(-20, 20)
+                right_y_offset = random.randint(-20, 20)
+                res = random.randint(10, 15)
+                noise = self.__generate_noise(20, res, substeps=random.randint(2, 5))
+                width = random.randint(3, 8)
 
                 # calculate pos
                 y_negation = False
@@ -828,7 +879,8 @@ class Golf_Hole_Generator(object):
                         if p[1] < y_pos:
                             start_p = p
                             end_p = self.outline_points[index - 1]
-                            x_pos = start_p[0] + (end_p[0] - start_p[0]) / (end_p[1] - start_p[1]) * (y_pos - start_p[1])
+                            x_pos = start_p[0] + (end_p[0] - start_p[0]) / (end_p[1] - start_p[1]) * (
+                                        y_pos - start_p[1])
                             break
                     else:
                         x_pos = self.outline_points[-1][0]
@@ -847,12 +899,12 @@ class Golf_Hole_Generator(object):
                         width=width
                     )
                     # create 60m outline curve points list
-                    curve_60_points = self.__calc_outline_curve_points(
+                    curve_60_points = [self.__calc_outline_curve_points(
                         line=True,
                         points=points,
                         points_scale=[1 for _ in range(res)],
                         width=width + 60
-                    )
+                    )]
                     # create 12m outline curve points list
                     curve_12_points = self.__calc_outline_curve_points(
                         line=True,
@@ -862,20 +914,26 @@ class Golf_Hole_Generator(object):
                     )
                     curve_points_type = [False for _ in curve_points]
 
+                    # resolve self intersections
+                    curve_60_points = self.__resolve_self_intersection(curve_60_points)
+                    stream_outline_curve_points = self.__resolve_self_intersection(stream_outline_curve_points)
+
                     # intersection test
                     for stram_poly in stream_outline_curve_points:
                         # check for other building intersection
-                        if Polygon(curve_60_points).intersects(Polygon(stram_poly)):
-                            if y_negation:
-                                y_pos -= 15
-                            elif y_pos + 15 < self.outline_points[0][1] - 150:
-                                y_pos += 15
-                            else:
-                                y_negation = True
-                                y_pos -= 15
-                            break
+                        for curve_60 in curve_60_points:
+                            if Polygon(curve_60).intersects(Polygon(stram_poly)):
+                                if y_negation:
+                                    y_pos -= 15
+                                elif y_pos + 15 < self.outline_points[0][1] - 150:
+                                    y_pos += 15
+                                else:
+                                    y_negation = True
+                                    y_pos -= 15
+                                break
                     else:
-                        stream_outline_curve_points.append(curve_60_points)
+                        for curve_60 in curve_60_points:
+                            stream_outline_curve_points.append(curve_60)
                         self.water_12_curve_points.append(curve_12_points)
 
                         # polygon outline
@@ -947,10 +1005,10 @@ class Golf_Hole_Generator(object):
                 lake_ring = [p for p in lake_ring if p[0] < 0]
 
             # set parameters
-            y_pos = self.outline_points[0][1] - random.randint(50, distance)  
-            height = random.randint(35, 55) * 2  
-            width = random.randint(18, 26) * 2  
-            noise = self.__generate_noise(20, 8, substeps=random.randint(2, 3))  
+            y_pos = self.outline_points[0][1] - random.randint(50, distance)
+            height = random.randint(35, 55) * 2
+            width = random.randint(18, 26) * 2
+            noise = self.__generate_noise(20, 8, substeps=random.randint(2, 3))
             x_pos = lake_ring[np.abs(np.array(lake_ring)[:, 1] - y_pos).argmin()][0]
             resolution = 8
 
@@ -994,9 +1052,13 @@ class Golf_Hole_Generator(object):
             # cut out different polygons
             for cut_poly in [self.green_14_curve_points] + [self.tee_outline_curve_points] + [self.center_outline_curve_points]:
                 # calculate intersection points
-                curve_points = self.__cut_polygon_from_polygon(curve_points, cut_poly)[0]
+                new_polygons = self.__cut_polygon_from_polygon(curve_points, cut_poly)
+                if len(new_polygons) > 0:
+                    curve_points = new_polygons[0]
 
-            curve_points = self.__cut_polygon_from_polygon(curve_points, lake_keep_out_zone)[0]
+            new_polygons = self.__cut_polygon_from_polygon(curve_points, cut_poly)
+            if len(new_polygons) > 0:
+                curve_points = new_polygons[0]
             curve_points = self.__re_mesh_polygon(curve_points, [False for _ in curve_points], "auto")
 
             curve_points_type = [False for _ in curve_points]
@@ -1014,13 +1076,13 @@ class Golf_Hole_Generator(object):
 
         # create buildings
         for i in range(count):
-            location = random.randint(0, len(self.outline_curve) - 1)  
+            location = random.randint(0, len(self.outline_curve) - 1)
 
             # define variables
-            center_offset = [random.randint(-5, 5), random.randint(-5, 5)]  
-            height = random.randint(10, 25)  
-            width = random.randint(10, 25)  
-            rotation = radians(random.randint(0, 90))  
+            center_offset = [random.randint(-5, 5), random.randint(-5, 5)]
+            height = random.randint(10, 25)
+            width = random.randint(10, 25)
+            rotation = radians(random.randint(0, 90))
 
             while True:
                 # normalize location
@@ -1035,6 +1097,11 @@ class Golf_Hole_Generator(object):
                 # calculate rectangle coordinates
                 curve_points = self.__calc_rectangle_cords(center, width, height, rotation)
                 curve_12_points = self.__calc_rectangle_cords(center, width + 24, height + 24, rotation)
+
+                # resolve self intersections
+                building_polygons = self.__resolve_self_intersection(building_polygons)
+                self.water_12_curve_points = self.__resolve_self_intersection(self.water_12_curve_points)
+                self.tee_5_curve_points = self.__resolve_self_intersection(self.tee_5_curve_points)
 
                 # intersection test
                 for build_poly in building_polygons:
@@ -1064,6 +1131,9 @@ class Golf_Hole_Generator(object):
                                 # polygon outline
                                 self.polygon_curve_12_points.append(curve_12_points)
                                 break
+
+            # resolve self intersections
+            self.path_curve_points = self.__resolve_self_intersection(self.path_curve_points)
 
             # check if they intersect with the path
             for path_curve_points in self.path_curve_points:
@@ -1096,7 +1166,8 @@ class Golf_Hole_Generator(object):
             building_polygons.append(curve_points)
 
     # green_bunker_count [count/integer], fairway_bunker_count [count/integer], distance [meter]
-    def __generate_bunker(self, green_bunker_count: int = 2, fairway_bunker_count: int = 1, par: int = 4, distance: int = 0):
+    def __generate_bunker(self, green_bunker_count: int = 2, fairway_bunker_count: int = 1, par: int = 4,
+                          distance: int = 0):
         green_bunker_curve_points = []
         # green bunkers
         for i in range(green_bunker_count):
@@ -1104,9 +1175,9 @@ class Golf_Hole_Generator(object):
             if random.randint(0, 3) <= 2:
                 # set parameters
                 start_index = random.randint(0, len(self.green_7_curve_points))
-                length = random.randint(2, 5)  
-                start_line = random.randint(0, 1) + 5  
-                end_line = random.randint(0, 1) + 5  
+                length = random.randint(2, 5)
+                start_line = random.randint(0, 1) + 5
+                end_line = random.randint(0, 1) + 5
                 width = -3 + min(end_line, start_line)
 
                 while True:
@@ -1121,18 +1192,24 @@ class Golf_Hole_Generator(object):
                         radius=width
                     )
                     # 2m curve points outline
-                    curve_5_points = self.generate_bunker_outline(
+                    curve_5_points = [self.generate_bunker_outline(
                         line_points=[start_point, center_point, end_point],
                         radius=width + 2
-                    )
+                    )]
+
+                    # resolve self intersections
+                    green_bunker_curve_points = self.__resolve_self_intersection(green_bunker_curve_points)
+                    curve_5_points = self.__resolve_self_intersection(curve_5_points)
 
                     # check for intersections
                     for bunker_poly in green_bunker_curve_points:
-                        if Polygon(curve_5_points).intersects(Polygon(bunker_poly)):
-                            start_index += 1
-                            break
+                        for curve_5 in curve_5_points:
+                            if Polygon(curve_5).intersects(Polygon(bunker_poly)):
+                                start_index += 1
+                                break
                     else:
-                        green_bunker_curve_points.append(curve_5_points)
+                        for curve_5 in curve_5_points:
+                            green_bunker_curve_points.append(curve_5)
                         break
 
                 # curve points type
@@ -1141,7 +1218,7 @@ class Golf_Hole_Generator(object):
             else:
                 # set parameters
                 index = random.randint(0, len(self.green_7_curve_points))
-                list_num = random.randint(0, 2) + 5  
+                list_num = random.randint(0, 2) + 5
                 width = -3 + list_num
 
                 while True:
@@ -1159,6 +1236,9 @@ class Golf_Hole_Generator(object):
                         radius=width + 2,
                         resolution=10
                     )
+
+                    # resolve self intersections
+                    green_bunker_curve_points = self.__resolve_self_intersection(green_bunker_curve_points)
 
                     # check for intersections
                     for bunker_poly in green_bunker_curve_points:
@@ -1194,14 +1274,14 @@ class Golf_Hole_Generator(object):
             for i in range(fairway_bunker_count):
                 # set parameters
                 y_pos = self.outline_points[0][1] - random.randint(150, distance - 50)
-                offset = [random.randint(-5, 5), random.randint(-5, 5)]  
+                offset = [random.randint(-5, 5), random.randint(-5, 5)]
                 # worm bunker
                 if random.randint(0, 3) <= 2:
                     # set parameters
-                    angle = radians(random.randint(-90, 90))  
-                    offset_angle = radians(random.randint(110, 170))  
-                    length = random.randint(8, 12)  
-                    radius = random.randint(3, 6)  
+                    angle = radians(random.randint(-90, 90))
+                    offset_angle = radians(random.randint(110, 170))
+                    length = random.randint(8, 12)
+                    radius = random.randint(3, 6)
 
                     # y_pos minus move direction
                     y_negation = False
@@ -1237,8 +1317,11 @@ class Golf_Hole_Generator(object):
                             radius=radius + 10
                         )
 
+                        cut_polygons = self.__resolve_self_intersection(fairway_bunker_curve_points + self.water_12_curve_points)
+                        self.path_curve_points = self.__resolve_self_intersection(self.path_curve_points)
+
                         # check for intersections
-                        for bunker_poly in fairway_bunker_curve_points + self.water_12_curve_points:
+                        for bunker_poly in cut_polygons:
                             if Polygon(curve_5_points).intersects(Polygon(bunker_poly)):
                                 # turn move direction down
                                 if y_pos + 5 > distance - 50:
@@ -1252,8 +1335,7 @@ class Golf_Hole_Generator(object):
                         else:
                             # check for intersection with other polygons
                             for path_curve_points in self.path_curve_points:
-                                if len(path_curve_points) > 0 and Polygon(curve_5_points).intersects(
-                                        Polygon(path_curve_points)):
+                                if len(path_curve_points) > 0 and Polygon(curve_5_points).intersects(Polygon(path_curve_points)):
                                     # move left right
                                     if x_negation is None and center_point[0] > 0:
                                         x_negation = True
@@ -1281,10 +1363,11 @@ class Golf_Hole_Generator(object):
                 # round bunker
                 else:
                     # set parameters
-                    radius = random.randint(4, 6)  
+                    radius = random.randint(4, 6)
 
                     # y_pos minus move direction
                     y_negation = False
+                    x_negation = None
                     while True:
                         # calculate x_pos
                         np_fairway_bunker_ring = np.array(fairway_bunker_ring)
@@ -1309,8 +1392,11 @@ class Golf_Hole_Generator(object):
                             resolution=10
                         )
 
+                        cut_polygons = self.__resolve_self_intersection(fairway_bunker_curve_points + self.water_12_curve_points)
+                        self.path_curve_points = self.__resolve_self_intersection(self.path_curve_points)
+
                         # check for intersections
-                        for bunker_poly in fairway_bunker_curve_points + self.water_12_curve_points:
+                        for bunker_poly in cut_polygons:
                             if Polygon(curve_5_points).intersects(Polygon(bunker_poly)):
                                 # turn move direction down
                                 if y_pos + 5 > distance - 50:
@@ -1324,10 +1410,14 @@ class Golf_Hole_Generator(object):
                         else:
                             # check for intersection with other polygons
                             for path_curve_points in self.path_curve_points:
-                                if len(path_curve_points) > 0 and Polygon(curve_5_points).intersects(
-                                        Polygon(path_curve_points)):
+                                if len(path_curve_points) > 0 and Polygon(curve_5_points).intersects(Polygon(path_curve_points)):
+                                    # define x movement direction
+                                    if x_pos + offset[0] > 0 and x_negation is None:
+                                        x_negation = True
+                                    elif x_negation is None:
+                                        x_negation = False
                                     # move left right
-                                    if x_pos + offset[0] > 0:
+                                    if x_negation:
                                         offset[0] -= 5
                                     else:
                                         offset[0] += 5
@@ -1368,7 +1458,7 @@ class Golf_Hole_Generator(object):
         # y is in range of points
         else:
             for i, p in enumerate(self.outline_points):
-                if p[1] > y > self.outline_points[i + 1][1]:
+                if p[1] >= y >= self.outline_points[i + 1][1]:
                     dx = self.outline_points[i][0] - self.outline_points[i + 1][0]
                     dy = self.outline_points[i][1] - self.outline_points[i + 1][1]
                     return dx / dy * (y - self.outline_points[i + 1][1]) + self.outline_points[i + 1][0]
@@ -1391,16 +1481,16 @@ class Golf_Hole_Generator(object):
                 rough_ring = [p for p in rough_ring if p[0] < self.__calc_center_for_y(p[1])]
 
             # set parameters
-            height = random.randint(50, distance // 2)  
-            y_pos = self.outline_points[0][1] - random.randint(0, distance - height)  
-            width = random.randint(12, 15)  
+            height = random.randint(50, distance // 2)
+            y_pos = self.outline_points[0][1] - random.randint(0, distance - height)
+            width = random.randint(12, 15)
 
             # calculate x, y positions
             x_start = rough_ring[np.abs(np.array(rough_ring)[:, 1] - y_pos).argmin()][0]
             x_center = rough_ring[np.abs(np.array(rough_ring)[:, 1] - (y_pos - height / 2)).argmin()][0]
             x_end = rough_ring[np.abs(np.array(rough_ring)[:, 1] - (y_pos - height)).argmin()][0]
 
-            points_scale = [1, random.randint(10, 15) / 10, 1]  
+            points_scale = [1, random.randint(10, 15) / 10, 1]
             # calculate outline curve
             curve_points = self.__calc_outline_curve_points(
                 line=False,
@@ -1450,16 +1540,16 @@ class Golf_Hole_Generator(object):
             )
 
             # set parameters
-            start = random.randint(0, len(rough_ring))  
-            length = random.randint(10, len(rough_ring) // 2)  
-            width = random.randint(5, 6)  
+            start = random.randint(0, len(rough_ring))
+            length = random.randint(10, len(rough_ring) // 2)
+            width = random.randint(5, 6)
 
             if start + length < len(rough_ring):
                 points = [p for p in rough_ring[start:start + length]]
             else:
                 points = [p for p in rough_ring[start:] + rough_ring[:length - (len(rough_ring) - start)]]
 
-            points_scale = [random.randint(10, 15) / 10 for _ in points]  
+            points_scale = [random.randint(10, 15) / 10 for _ in points]
             # calculate outline curve
             curve_points = self.__calc_outline_curve_points(
                 line=False,
@@ -1518,49 +1608,51 @@ class Golf_Hole_Generator(object):
             # cut out polygons
             for cut_poly in self.polygon_curve_12_points:
                 for poly_i, poly in enumerate(curve_points):
-                    # try to solve self-intersecting polygons
-                    if not Polygon(cut_poly).is_simple:
-                        cut_poly = Polygon(cut_poly).buffer(0)
-                        cut_poly = cut_poly.exterior.coords[:-1]
-                    if not Polygon(poly).is_simple:
-                        poly = Polygon(poly).buffer(0)
-                        poly = poly.exterior.coords[:-1]
-
                     # cut out polygon
-                    new_polygon = self.__cut_polygon_from_polygon(poly, cut_poly)
-                    curve_points[poly_i] = new_polygon[0]
+                    new_polygons = self.__cut_polygon_from_polygon(poly, cut_poly)
+                    if len(new_polygons) == 0 or len(new_polygons[0]) < 3:
+                        curve_points.pop(poly_i)
+                    else:
+                        curve_points[poly_i] = new_polygons[0]
 
-                    if len(new_polygon) > 1:
-                        for i, new_poly in enumerate(new_polygon[1:]):
-                            curve_points.append(new_poly)
+                        for p in new_polygons[1:]:
+                            if len(p) > 3:
+                                curve_points.append(p)
 
             # re mesh polygons
             for i, poly in enumerate(curve_points):
-                if len(poly) > 2:
+                if len(poly) > 3:
                     curve_points[i] = self.__re_mesh_polygon(poly, [False for _ in poly], 10)
 
             # fairway near green
-            to_green_dis = random.randint(40, 50)  
-            entrance_width = random.randint(10, 15)  
+            to_green_dis = random.randint(40, 50)
+            entrance_width = random.randint(10, 15)
             rotation = atan2(
                 self.outline_points[-2][0] - self.outline_points[-1][0],
                 self.outline_points[-2][1] - self.outline_points[-1][1]
             )
 
             cut_poly = self.__calc_rectangle_cords(self.outline_points[-1], 100, to_green_dis * 2, rotation)
+            # resolve self intersections
+            curve_points = self.__resolve_self_intersection(curve_points)
 
             # cut out green section
             poly_index = None
             for i, curve in enumerate(curve_points):
-                if Polygon(curve).intersects(Polygon(cut_poly)):
-                    if not Polygon(curve).is_simple:
-                        curve = Polygon(curve).buffer(0)[0]
-                        curve = curve.exterior.coords[:-1]
+                if len(curve) > 3 and len(cut_poly) > 3 and Polygon(curve).intersects(Polygon(cut_poly)):
+                    new_polygons = self.__cut_polygon_from_polygon(curve, cut_poly)
+                    if len(new_polygons) == 0 or len(new_polygons[0]) < 3:
+                        curve_points.pop(i)
+                    else:
+                        curve_points[i] = new_polygons[0]
 
-                    curve_points[i] = self.__cut_polygon_from_polygon(curve, cut_poly)[0]
-                    if len(curve_points[i]) > 2:
+                        for p in new_polygons[1:]:
+                            if len(p) > 3:
+                                curve_points.append(p)
+
                         poly_index = i
                         break
+
 
             if poly_index is not None:
                 curve = Polygon(curve_points[poly_index]).buffer(0)
@@ -1686,7 +1778,7 @@ class Golf_Hole_Generator(object):
 
             # create new polygon
             for curve, curve_type in zip(curve_points, curve_points_type):
-                if len(curve) > 2:
+                if len(curve) > 3:
                     self.polygon_z_pos.insert(0, 1)
                     self.polygon_colors.insert(0, self.colors[2])
                     self.polygon_curve.insert(0, [])
@@ -1695,8 +1787,8 @@ class Golf_Hole_Generator(object):
         # for par 3
         else:
             # fairway near green
-            to_green_dis = random.randint(40, 50)  
-            entrance_width = random.randint(10, 15)  
+            to_green_dis = random.randint(40, 50)
+            entrance_width = random.randint(10, 15)
             rotation = atan2(
                 self.outline_points[-2][0] - self.outline_points[-1][0],
                 self.outline_points[-2][1] - self.outline_points[-1][1]
@@ -1759,13 +1851,15 @@ class Golf_Hole_Generator(object):
             ]
 
             # left
-            if self.__distance_point_to_line(left_points[0], line) > self.__distance_point_to_line(left_points[-1], line):
+            if self.__distance_point_to_line(left_points[0], line) > self.__distance_point_to_line(left_points[-1],
+                                                                                                   line):
                 left_index = self.green_2_curve_points.index(left_points[-1])
             else:
                 left_index = self.green_2_curve_points.index(left_points[0])
 
             # right
-            if self.__distance_point_to_line(right_points[0], line) > self.__distance_point_to_line(right_points[-1], line):
+            if self.__distance_point_to_line(right_points[0], line) > self.__distance_point_to_line(right_points[-1],
+                                                                                                    line):
                 right_index = self.green_2_curve_points.index(right_points[-1])
             else:
                 right_index = self.green_2_curve_points.index(right_points[0])
@@ -1800,7 +1894,7 @@ class Golf_Hole_Generator(object):
         # create occupancy map
         for i, poly in enumerate(self.polygon_curve_points):
             for color in [self.colors[2], self.colors[5], self.colors[8], self.colors[10], self.colors[11]]:
-                if np.array_equal(color, self.polygon_colors[i]):
+                if np.array_equal(color, self.polygon_colors[i]) and len(poly) > 0:
                     # calc polygon points
                     outline_arr = np.array(poly, dtype=np.int32)
                     outline_arr[:, 0] += self.center[0]
@@ -1855,8 +1949,8 @@ class Golf_Hole_Generator(object):
         possible_tree_cords = np.transpose(np.where(tree_map == 0)).tolist()
 
         for i in range(tree_count):
-            tree_pos = possible_tree_cords[random.randint(0, len(possible_tree_cords))]  
-            tree_radius = random.randint(6, 10)  
+            tree_pos = possible_tree_cords[random.randint(0, len(possible_tree_cords) - 1)]
+            tree_radius = random.randint(6, 10)
 
             curve_points = []
             # create curve points
@@ -1906,16 +2000,45 @@ class Golf_Hole_Generator(object):
         return np.linalg.norm(point - closest_point)
 
     # poly_1 list[x, y points], poly_2 list[x, y points]
-    @staticmethod
-    def __cut_polygon_from_polygon(poly: list[[float, float]], cut_poly: list[[float, float]]):
-        poly1 = Polygon(poly)
-        poly2 = Polygon(cut_poly)
-        result = poly1.difference(poly2)
+    def __cut_polygon_from_polygon(self, poly: list[[float, float]], cut_poly: list[[float, float]]):
+        # check and resolve self intersections
+        poly = self.__resolve_self_intersection([poly])
+        cut_poly = self.__resolve_self_intersection([cut_poly])
 
-        if type(result) == MultiPolygon:
-            return [list(p.exterior.coords) for p in result.geoms]
-        else:
-            return [list(result.exterior.coords)]
+        poly1 = [Polygon(p) for p in poly]
+        poly2 = [Polygon(p) for p in cut_poly]
+
+        result = copy.deepcopy(poly1)
+        i = 0
+        # loop over the polygons
+        while i < len(result):
+            if len(result[i].exterior.coords) > 3:
+                for cut_poly in poly2:
+                    if len(cut_poly.exterior.coords) > 3:
+                        # cut polygons
+                        res = result[i].difference(cut_poly)
+
+                        # Multi Polygon
+                        if type(res) == MultiPolygon:
+                            if len(res.geoms[0].exterior.coords) > 3:
+                                result[i] = res.geoms[0]
+                            else:
+                                result.pop(i)
+
+                            for p in res.geoms:
+                                if len(p.exterior.coords) > 3:
+                                    result.append(p)
+
+                        # Normal Polygon
+                        else:
+                            if len(res.exterior.coords) > 3:
+                                result[i] = res
+                            else:
+                                result.pop(i)
+
+            i += 1
+
+        return [p.exterior.coords[:-1] for p in result]
 
     # center [x, y point], width [meter], height [meter], rotation [radians]
     @staticmethod
@@ -2001,39 +2124,68 @@ class Golf_Hole_Generator(object):
         return [new_x, new_y]
 
     # curve_points list[x, y points], curve_points_type [bool], resolution [int/auto]
-    def __re_mesh_polygon(self, curve_points: list[list[int, int]], curve_points_type: list[bool], accuracy = "auto"):
+    def __re_mesh_polygon(self, curve_points: list[list[int, int]], curve_points_type: list[bool], accuracy="auto"):
         curve = self.__calc_polygon_outline(curve_points=curve_points, curve_points_type=curve_points_type)
-        length = Polygon(curve).length
-        curve += curve[:10]
+        if len(curve) > 3:
+            length = Polygon(curve).length
+            curve += curve[:10]
 
-        # calculate resolution
-        resolution = floor(length / 20) if accuracy == "auto" else floor(length / accuracy)
+            # calculate resolution
+            resolution = floor(length / 20) if accuracy == "auto" else floor(length / accuracy)
 
-        new_curve = []
-        index = 0
-        index_dis = 0
-        for i in range(resolution):
-            step_length = length / resolution
-            while True:
-                dx = (curve[index + 1][0] - curve[index][0])
-                dy = (curve[index + 1][1] - curve[index][1])
-                element_dis = sqrt(dx ** 2 + dy ** 2)
-                # step length is bigger than element length
-                if element_dis - index_dis < step_length:
-                    step_length -= (element_dis - index_dis)
-                    index += 1
-                    index_dis = 0
-                # step length shorter than element length
-                else:
-                    index_dis += step_length
-                    new_curve.append(
-                        [curve[index][0] + dx / element_dis * index_dis,
-                         curve[index][1] + dy / element_dis * index_dis]
-                    )
+            new_curve = []
+            index = 0
+            index_dis = 0
+            for i in range(resolution):
+                step_length = length / resolution
+                while True:
+                    dx = (curve[index + 1][0] - curve[index][0])
+                    dy = (curve[index + 1][1] - curve[index][1])
+                    element_dis = sqrt(dx ** 2 + dy ** 2)
+                    # step length is bigger than element length
+                    if element_dis - index_dis < step_length:
+                        step_length -= (element_dis - index_dis)
+                        index += 1
+                        index_dis = 0
+                    # step length shorter than element length
+                    else:
+                        index_dis += step_length
+                        new_curve.append(
+                            [curve[index][0] + dx / element_dis * index_dis,
+                             curve[index][1] + dy / element_dis * index_dis]
+                        )
 
-                    break
+                        break
+        else:
+            new_curve = curve_points
 
         return new_curve
+
+    # resolves self intersection in polygons, polygons list[x, y points]
+    @staticmethod
+    def __resolve_self_intersection(polygons: list[[int, int]]):
+        for p_i, polygon in enumerate(polygons):
+            # check if polygon has self intersection
+            if len(polygon) > 3 and not Polygon(polygon).is_simple:
+                polygon = Polygon(polygon).buffer(0)
+                # Multy Polygon
+                if type(polygon) == MultiPolygon:
+                    if len(polygon.geoms[0].exterior.coords[:-1]) > 3:
+                        polygons[p_i] = polygon.geoms[0].exterior.coords[:-1]
+                    else:
+                        polygons.pop(p_i)
+
+                    for c in [p for p in polygon.geoms][1:]:
+                        if len(c.exterior.coords[:-1]) > 3:
+                            polygons.append(c.exterior.coords[:-1])
+                # normal Polygon
+                else:
+                    if len(polygon.exterior.coords[:-1]) > 3:
+                        polygons[p_i] = polygon.exterior.coords[:-1]
+                    else:
+                        polygons.pop(p_i)
+
+        return polygons
 
     # line_points list[x, y points], radius [meter]
     @staticmethod
@@ -2044,7 +2196,7 @@ class Golf_Hole_Generator(object):
     @staticmethod
     def __generate_noise(size, length, substeps: int = 2):
         # calculate noise points
-        noise_points = [random.randint(0, 10) / 10 for _ in range(substeps + 2)]  
+        noise_points = [random.randint(0, 10) / 10 for _ in range(substeps + 2)]
         noise_points[-1] = noise_points[0]
 
         noise = []

@@ -37,7 +37,7 @@ class Data_converter(object):
         # load data
         with open("Data_set/Procedural_Dataset.csv", "r") as csv_file:
             reader = csv.reader(csv_file)
-            procedural_rows = [row for row in reader if row]
+            procedural_rows = [row for i, row in enumerate(reader) if row and i < 500]
 
         # convert data
         self.data = [
@@ -93,9 +93,26 @@ class Data_converter(object):
 
     # convert all procedural data
     def convert_all_procedural(self):
+        # progress bar
+        print(f"Convert all procedural holes:")
+        print("[{}] {}%".format("." * 20, 0), end="", flush=True)
+
         # convert data
         for index, data in enumerate(self.procedural_data):
             self.convert_procedural(data=data)
+
+            # update progress bar
+            print("\r", end="")
+            print(
+                "[{}{}] {}%".format(
+                    "=" * floor(index / (len(self.procedural_data) - 1) * 20),
+                    "." * (20 - floor(index / (len(self.procedural_data) - 1) * 20)),
+                    index / (len(self.procedural_data) - 1) * 100),
+                end="", flush=True
+            )
+
+        print("\r", end="")
+        print("[----- Complete -----] 100%\n", end="", flush=True)
 
         # return data
         return list(self.procedural_converted_data.values())
@@ -208,10 +225,11 @@ class Data_converter(object):
                     self.procedural_outlines[index][i][p_index][1] += self.GRID_SIZE[1] / 2
 
                 # convert outline to cv2 format points
-                points = np.array(self.procedural_outlines[index][i], dtype=np.int32)
-                points = points.reshape((-1, 1, 2))
-                # draw polygon
-                cv2.fillPoly(self.color_array, [points], color=data[5][i] + 1)
+                if len(self.procedural_outlines[index][i]) > 0:
+                    points = np.array(self.procedural_outlines[index][i], dtype=np.int32)
+                    points = points.reshape((-1, 1, 2))
+                    # draw polygon
+                    cv2.fillPoly(self.color_array, [points], color=data[5][i] + 1)
 
             # calculate outline mask
             points = np.array(self.calc_hole_outline(data, delta_x, delta_y), dtype=np.int32)
@@ -233,24 +251,27 @@ class Data_converter(object):
     # calculate polygon outline
     def calc_outline(self, data):
         # ready up for bezier calculation
-        points = [data[-1]] + data + data[0:3]
-        polygon_data = []
+        if len(data) > 4:
+            points = [data[-1]] + data + data[0:3]
+            polygon_data = []
 
-        for i in range(len(points) - 4):
-            # first point
-            vector_points = [points[i + 1][0]]
-            if not points[i][1]:
-                vector_points.append(self.__get_vector_points(points[i][0], points[i + 1][0], points[i + 2][0])[1])
-            # second point
-            if not points[i + 1][1]:
-                vector_points.append(self.__get_vector_points(points[i + 1][0], points[i + 2][0], points[i + 3][0])[0])
-            vector_points.append(points[i + 2][0])
+            for i in range(len(points) - 4):
+                # first point
+                vector_points = [points[i + 1][0]]
+                if not points[i][1]:
+                    vector_points.append(self.__get_vector_points(points[i][0], points[i + 1][0], points[i + 2][0])[1])
+                # second point
+                if not points[i + 1][1]:
+                    vector_points.append(self.__get_vector_points(points[i + 1][0], points[i + 2][0], points[i + 3][0])[0])
+                vector_points.append(points[i + 2][0])
 
-            # add bezier points to poly list
-            for pos in self.__calc_bezier(vector_points):
-                polygon_data.append(pos)
+                # add bezier points to poly list
+                for pos in self.__calc_bezier(vector_points):
+                    polygon_data.append(pos)
 
-        return polygon_data
+            return polygon_data
+        else:
+            return []
     
     # calculate curve points
     def calc_hole_outline(self, data, hole_delta_x, hole_delta_y):
@@ -341,11 +362,19 @@ class Data_converter(object):
 
         # return vector points
         if abs(dx) >= abs(dy):
-            return (p2[0] - p13_dis / dx * (p12_dis / 3), p2[1] - p13_dis / dx * (p12_dis / 3) * (dy / dx)), \
-                   (p2[0] + p13_dis / dx * (p23_dis / 3), p2[1] + p13_dis / dx * (p23_dis / 3) * (dy / dx))
+            if dx != 0:
+                return (p2[0] - p13_dis / dx * (p12_dis / 3), p2[1] - p13_dis / dx * (p12_dis / 3) * (dy / dx)), \
+                       (p2[0] + p13_dis / dx * (p23_dis / 3), p2[1] + p13_dis / dx * (p23_dis / 3) * (dy / dx))
+            else:
+                return (p2[0], p2[1] - p13_dis * (p12_dis / 3)), \
+                       (p2[0], p2[1] + p13_dis * (p23_dis / 3))
         else:
-            return (p2[0] - p13_dis / dy * (p12_dis / 3) * (dx / dy), p2[1] - p13_dis / dy * (p12_dis / 3)), \
-                   (p2[0] + p13_dis / dy * (p23_dis / 3) * (dx / dy), p2[1] + p13_dis / dy * (p23_dis / 3))
+            if dy != 0:
+                return (p2[0] - p13_dis / dy * (p12_dis / 3) * (dx / dy), p2[1] - p13_dis / dy * (p12_dis / 3)), \
+                       (p2[0] + p13_dis / dy * (p23_dis / 3) * (dx / dy), p2[1] + p13_dis / dy * (p23_dis / 3))
+            else:
+                return (p2[0] - p13_dis * (p12_dis / 3), p2[1]), \
+                       (p2[0] + p13_dis * (p23_dis / 3), p2[1])
 
     # calculate bezier curve
     @staticmethod
