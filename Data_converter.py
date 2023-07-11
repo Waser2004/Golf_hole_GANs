@@ -2,6 +2,7 @@ import copy
 import csv
 import ast
 import cv2
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from math import *
@@ -37,7 +38,7 @@ class Data_converter(object):
         # load data
         with open("Data_set/Procedural_Dataset.csv", "r") as csv_file:
             reader = csv.reader(csv_file)
-            procedural_rows = [row for i, row in enumerate(reader) if row and i < 500]
+            procedural_rows = [row for i, row in enumerate(reader) if row]
 
         # convert data
         self.data = [
@@ -83,10 +84,18 @@ class Data_converter(object):
         self.procedural_converted_data = {}
 
     # convert all data
-    def convert_all(self):
+    def convert_all(self, only_par: int = None):
         # convert data
         for index, data in enumerate(self.data):
-            self.convert(data=data)
+            if only_par is None:
+                self.convert(data=data)
+            else:
+                folder_path = 'D:/Ondrive/OneDrive - Venusnet/Dokumente/2. Schule/Maturarbeit/Golf_course_IMGs'
+                file_names = os.listdir(folder_path)
+
+                for file in file_names:
+                    if file.count(data[0]) and int(file.split("-")[2].split(".")[0]) == only_par:
+                        self.convert(data=data)
 
         # return data
         return list(self.converted_data.values())
@@ -251,7 +260,7 @@ class Data_converter(object):
     # calculate polygon outline
     def calc_outline(self, data):
         # ready up for bezier calculation
-        if len(data) > 4:
+        if len(data) >= 3:
             points = [data[-1]] + data + data[0:3]
             polygon_data = []
 

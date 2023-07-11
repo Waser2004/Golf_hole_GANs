@@ -155,11 +155,11 @@ class Golf_Hole_Generator(object):
             self.__generate_tee(
                 offset_angle=random.randint(-4, 4)
             )
-            # if random.randint(0, 10) <= 4:
-            #     self.__generate_path(
-            #         par=par,
-            #         align_side="left" if random.randint(0, 1) == 0 else "right"
-            #     )
+            if random.randint(0, 10) <= 4:
+                self.__generate_path(
+                    par=par,
+                    align_side="left" if random.randint(0, 1) == 0 else "right"
+                )
             # self.__generate_water(
             #     stream_count=random.randint(1, 2) if random.randint(0, 1) == 1 else 0,
             #     lake_count=random.randint(1, 2) if random.randint(0, 3) == 3 else 0,
@@ -178,14 +178,13 @@ class Golf_Hole_Generator(object):
             #     count=random.randint(0, 3),
             #     distance=distance
             # )
-            # self.__generate_out(1)
+            self.__generate_out(1)
             self.__generate_fairway(
                 par=par
             )
             # self.__generate_trees(
             #     tree_count=random.randint(0, 20)
             # )
-            # print("semi rough")
             self.__generate_semi_rough()
 
             # visualise
