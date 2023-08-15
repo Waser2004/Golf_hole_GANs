@@ -85,6 +85,10 @@ class Data_converter(object):
 
     # convert all data
     def convert_all(self, only_par: int = None):
+        # progress bar
+        print(f"Convert all real holes:")
+        print("[{}] {}%".format("." * 20, 0), end="", flush=True)
+
         # convert data
         for index, data in enumerate(self.data):
             if only_par is None:
@@ -96,6 +100,20 @@ class Data_converter(object):
                 for file in file_names:
                     if file.count(data[0]) and int(file.split("-")[2].split(".")[0]) == only_par:
                         self.convert(data=data)
+
+            # update progress bar
+            print("\r", end="")
+            print(
+                "[{}{}] {}%".format(
+                    "=" * floor(index / (len(self.data) - 1) * 20),
+                    "." * (20 - floor(index / (len(self.data) - 1) * 20)),
+                    index / (len(self.data) - 1) * 100),
+                end="", flush=True
+            )
+
+        print("\r", end="")
+        print("[----- Complete -----] 100%\n", end="", flush=True)
+        print(f"{len(list(self.converted_data.values()))} real holes converted!")
 
         # return data
         return list(self.converted_data.values())
@@ -122,6 +140,7 @@ class Data_converter(object):
 
         print("\r", end="")
         print("[----- Complete -----] 100%\n", end="", flush=True)
+        print(f"{len(list(self.converted_data.values()))} procedural holes converted!")
 
         # return data
         return list(self.procedural_converted_data.values())

@@ -17,16 +17,31 @@ class Augmentation(object):
         converter = Data_converter(grid_size=grid_size, box_size=box_size)
         data = converter.convert_all()
 
-        print(len(data))
+        # progress bar
+        print(f"Augment real holes:")
+        print("[{}] {}%".format("." * 20, 0), end="", flush=True)
 
         # augment data
         augmented_data = []
-        for d in data:
+        for index, d in enumerate(data):
             augmented_data.append(d)
             for aug in self.auto_augment(d, box_size):
                 augmented_data.append(aug)
 
-        print(len(augmented_data))
+            # update progress bar
+            print("\r", end="")
+            print(
+                "[{}{}] {}%".format(
+                    "=" * floor(index / (len(data) - 1) * 20),
+                    "." * (20 - floor(index / (len(data) - 1) * 20)),
+                    index / (len(data) - 1) * 100),
+                end="", flush=True
+            )
+
+        print("\r", end="")
+        print("[----- Complete -----] 100%\n", end="", flush=True)
+        print(f"New Data size: {len(augmented_data)}")
+
         return augmented_data
 
     # auto augmentation

@@ -160,31 +160,31 @@ class Golf_Hole_Generator(object):
                     par=par,
                     align_side="left" if random.randint(0, 1) == 0 else "right"
                 )
-            # self.__generate_water(
-            #     stream_count=random.randint(1, 2) if random.randint(0, 1) == 1 else 0,
-            #     lake_count=random.randint(1, 2) if random.randint(0, 3) == 3 else 0,
-            #     distance=distance
-            # )
-            # self.__generate_buildings(
-            #     random.randint(1, 2) if random.randint(0, 2) == 0 else 0
-            # )
-            # self.__generate_bunker(
-            #     green_bunker_count=random.randint(1, 3),
-            #     fairway_bunker_count=random.randint(1, 4),
-            #     par=par,
-            #     distance=distance
-            # )
-            # self.__generate_rough(
-            #     count=random.randint(0, 3),
-            #     distance=distance
-            # )
-            self.__generate_out(1)
+            self.__generate_water(
+                stream_count=random.randint(1, 2) if random.randint(0, 1) == 1 else 0,
+                lake_count=random.randint(1, 2) if random.randint(0, 3) == 3 else 0,
+                distance=distance
+            )
+            self.__generate_buildings(
+                random.randint(1, 2) if random.randint(0, 2) == 0 else 0
+            )
+            self.__generate_bunker(
+                green_bunker_count=random.randint(1, 3),
+                fairway_bunker_count=random.randint(1, 4),
+                par=par,
+                distance=distance
+            )
+            self.__generate_rough(
+                count=random.randint(0, 3),
+                distance=distance
+            )
+            self.__generate_out(random.randint(0, 1))
             self.__generate_fairway(
                 par=par
             )
-            # self.__generate_trees(
-            #     tree_count=random.randint(0, 20)
-            # )
+            self.__generate_trees(
+                tree_count=random.randint(0, 20)
+            )
             self.__generate_semi_rough()
 
             # visualise

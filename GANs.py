@@ -3,6 +3,7 @@ import random
 import json
 import time
 
+from Data_augmentation import Augmentation
 from Data_converter import Data_converter
 from PIL import Image
 from Data_visualisation import Data_Visualiser
@@ -29,8 +30,17 @@ data_conv = Data_converter(
     box_size=BOX_SIZE
 )
 
+print("#########################################################################")
+print(f"Loading Dataset")
+print("#########################################################################")
+
+data_aug = Augmentation()
+
 # convert data
-DATA = data_conv.convert_all_procedural()
+DATA = data_aug.augment_data(grid_size=GIRD_SIZE, box_size=BOX_SIZE)
+DATA += data_conv.convert_all_procedural()
+
+print(len(DATA))
 
 # Train Data / Log
 TRAIN_DATA = np.array(DATA)
@@ -53,9 +63,8 @@ class CustomDataset(Dataset):
 
 # --- DCGAN --- #
 class DCGAN(torch.nn.Module):
-    def __init__(self, load, backup, name, latent_dim=100, num_feat_maps_gen=32, num_feat_maps_dis=28, color_channels=13):
+    def __init__(self, load, backup, name, latent_dim=100, num_feat_maps_gen=64, num_feat_maps_dis=25, color_channels=13):
         super().__init__()
-
         self.generator = nn.Sequential(
             # (latent_dim, 1, 1)
             nn.ConvTranspose2d(latent_dim, num_feat_maps_gen * 16, kernel_size=12, stride=2, padding=4, bias=False),
@@ -69,7 +78,7 @@ class DCGAN(torch.nn.Module):
             nn.ConvTranspose2d(num_feat_maps_gen * 8, num_feat_maps_gen * 8, kernel_size=7, stride=2, padding=2, bias=False),
             nn.BatchNorm2d(num_feat_maps_gen * 8),
             nn.LeakyReLU(inplace=True),
-            # (num_feat_maps_gen * 4, 31, 31)
+            # (num_feat_maps_gen * 8, 31, 31)
             nn.ConvTranspose2d(num_feat_maps_gen * 8, num_feat_maps_gen * 4, kernel_size=4, stride=(1, 2), padding=1, bias=False),
             nn.BatchNorm2d(num_feat_maps_gen * 4),
             nn.LeakyReLU(inplace=True),
@@ -77,11 +86,11 @@ class DCGAN(torch.nn.Module):
             nn.ConvTranspose2d(num_feat_maps_gen * 4, num_feat_maps_gen * 2, kernel_size=4, stride=2, padding=0, bias=False),
             nn.BatchNorm2d(num_feat_maps_gen * 2),
             nn.LeakyReLU(inplace=True),
-            # (num_feat_maps_gen * 4, 66, 126)
+            # (num_feat_maps_gen * 2, 66, 126)
             nn.ConvTranspose2d(num_feat_maps_gen * 2, num_feat_maps_gen, kernel_size=4, stride=1, padding=(3, 2), bias=False),
             nn.BatchNorm2d(num_feat_maps_gen),
             nn.LeakyReLU(inplace=True),
-            # (num_feat_maps_gen * 4, 63, 125)
+            # (num_feat_maps_gen, 63, 125)
             nn.ConvTranspose2d(num_feat_maps_gen, color_channels, kernel_size=4, stride=1, padding=0, bias=False),
             # (color_channels = 13, 66, 128)
             nn.Tanh()
@@ -142,10 +151,11 @@ class DCGAN(torch.nn.Module):
         return logits
 
 
-def generate_epoch_image(model, device, epoch):
+def generate_epoch_image(model, device, epoch, iterations=False):
     # generate image
-    print("Create epoch-Image:")
-    print("[{}] {}%".format("." * 20, 0), end="", flush=True)
+    if not iterations:
+        print("Create epoch-Image:")
+        print("[{}] {}%".format("." * 20, 0), end="", flush=True)
 
     images = model.generator_forward(torch.load('Noise_Tensors/32d_perm_noise.pt').to(device))
     parent_image = np.zeros((4 * 128, 8 * 66, 3)).astype(np.uint8)
@@ -164,26 +174,29 @@ def generate_epoch_image(model, device, epoch):
         # apply image
         parent_image[x:x + 128, y:y + 66] = visualised_img
 
-        print("\r", end="")
-        print(
-            "[{}{}] {}%".format(
-                "=" * floor(i / (len(images) - 1) * 20) if (len(images) - 1) > 0 else 20,
-                "." * (20 - floor(i / (len(images) - 1) * 20)) if (len(images) - 1) > 0 else 0,
-                i / (len(images) - 1) * 100) if (len(images) - 1) > 0 else 100,
-            end="", flush=True
-        )
+        if not iterations:
+            print("\r", end="")
+            print(
+                "[{}{}] {}%".format(
+                    "=" * floor(i / (len(images) - 1) * 20) if (len(images) - 1) > 0 else 20,
+                    "." * (20 - floor(i / (len(images) - 1) * 20)) if (len(images) - 1) > 0 else 0,
+                    i / (len(images) - 1) * 100) if (len(images) - 1) > 0 else 100,
+                end="", flush=True
+            )
 
     # save image
-    print(epoch)
     image = Image.fromarray(parent_image)
-    image.save(f'D:/4. Programmieren/Golf_hole_GANs/Generated_Images/{MODEL_NAME}/Epoch_{epoch}.png')
+    if not iterations:
+        image.save(f'D:/4. Programmieren/Golf_hole_GANs/Generated_Images/{MODEL_NAME}/Epoch_{epoch}.png')
 
-    print("\r", end="")
-    print("[----- Complete -----] 100%")
+        print("\r", end="")
+        print("[----- Complete -----] 100%")
+    else:
+        image.save(f'D:/4. Programmieren/Golf_hole_GANs/Generated_Images/{MODEL_NAME}/Iterations/Iteration_{epoch}.png')
 
 
 # Training loop
-def train(start_epoch, epochs, model, data, gen_optimizer, disc_optimizer, latent_space, device, prev_log, loss_fn = None):
+def train(start_epoch, epochs, model, data, gen_optimizer, disc_optimizer, latent_space, device, prev_log, model_name, loss_fn = None):
     log = {
         "generator_loss": prev_log["generator_loss"] if prev_log is not None else [],
         "discriminator_loss": prev_log["discriminator_loss"] if prev_log is not None else [],
@@ -217,12 +230,12 @@ def train(start_epoch, epochs, model, data, gen_optimizer, disc_optimizer, laten
             # convert real data - use smooth labels
             real_images = encode_data(features, device, smooth=True)
             real_images.to(device)
-            real_labels = flipped_fake_labels = torch.ones(batch_size, device=device)
+            real_labels = flipped_fake_labels = torch.ones(batch_size, device=device) - 0.1
 
             # generate fake images - use smooth labels
             noise = torch.randn(batch_size, latent_space, 1, 1, device=device)
             fake_images = model.generator_forward(noise)
-            fake_labels = torch.zeros(batch_size, device=device)
+            fake_labels = torch.zeros(batch_size, device=device) + 0.1
 
             # --- train discriminator --- #
             disc_optimizer.zero_grad()
@@ -258,10 +271,12 @@ def train(start_epoch, epochs, model, data, gen_optimizer, disc_optimizer, laten
             # update progress bar
             print("\r", end="")
             print(
-                "[{}{}] {}%".format(
+                "[{}{}] {}% Generator_loss: {}, Discriminator_loss: {}".format(
                     "=" * floor(batch_idx / (len(data) - 1) * 20) if (len(data) - 1) > 0 else 20,
                     "." * (20 - floor(batch_idx / (len(data) - 1) * 20)) if (len(data) - 1) > 0 else 0,
-                    batch_idx / (len(data) - 1) * 100) if (len(data) - 1) > 0 else 100,
+                    batch_idx / (len(data) - 1) * 100 if (len(data) - 1) > 0 else 100,
+                    str(gen_loss.detach().item()),
+                    str(disc_loss.detach().item())),
                 end="", flush=True
             )
 
@@ -293,6 +308,10 @@ def train(start_epoch, epochs, model, data, gen_optimizer, disc_optimizer, laten
 
             plt.pause(0.0001)
 
+            if len(log["generator_loss"]) % 300 == 0:
+                # generate image
+                generate_epoch_image(model, DEVICE, len(log["generator_loss"]), iterations=True)
+
         print("\r", end="")
         print("[----- Complete -----] 100%")
 
@@ -300,19 +319,18 @@ def train(start_epoch, epochs, model, data, gen_optimizer, disc_optimizer, laten
         log["elapsed_time"].append(time.time() - start)
 
         # save backup
-        if (epoch + 1 + start_epoch) % 10 == 0:
-            torch.save(model.generator.state_dict(), f"D:/4. Programmieren/Golf_hole_GANs/Models/{MODEL_NAME}/Backups/Generator_{epoch + 1 + start_epoch}.pth")
-            torch.save(model.discriminator.state_dict(), f"D:/4. Programmieren/Golf_hole_GANs/Models/{MODEL_NAME}/Backups/Discriminator_{epoch + 1 + start_epoch}.pth")
+        torch.save(model.generator.state_dict(), f"D:/4. Programmieren/Golf_hole_GANs/Models/{model_name}/Backups/Generator_{epoch + 1 + start_epoch}.pth")
+        torch.save(model.discriminator.state_dict(), f"D:/4. Programmieren/Golf_hole_GANs/Models/{model_name}/Backups/Discriminator_{epoch + 1 + start_epoch}.pth")
 
-            with open(f"D:/4. Programmieren/Golf_hole_GANs/Models/{MODEL_NAME}/Backups/log_{epoch + 1 + start_epoch}.json", 'w') as file:
-                json.dump(log, file)
+        with open(f"D:/4. Programmieren/Golf_hole_GANs/Models/{model_name}/Backups/log_{epoch + 1 + start_epoch}.json", 'w') as file:
+            json.dump(log, file)
 
         # save Models
-        torch.save(model.generator.state_dict(), f"D:/4. Programmieren/Golf_hole_GANs/Models/{MODEL_NAME}/Generator.pth")
-        torch.save(model.discriminator.state_dict(), f"D:/4. Programmieren/Golf_hole_GANs/Models/{MODEL_NAME}/Discriminator.pth")
+        torch.save(model.generator.state_dict(), f"D:/4. Programmieren/Golf_hole_GANs/Models/{model_name}/Generator.pth")
+        torch.save(model.discriminator.state_dict(), f"D:/4. Programmieren/Golf_hole_GANs/Models/{model_name}/Discriminator.pth")
 
         # save log data
-        with open(f'D:/4. Programmieren/Golf_hole_GANs/Models/{MODEL_NAME}/log.json', 'w') as file:
+        with open(f'D:/4. Programmieren/Golf_hole_GANs/Models/{model_name}/log.json', 'w') as file:
             json.dump(log, file)
 
         # generate image
@@ -335,7 +353,7 @@ def encode_data(data, device, smooth=False):
     output_array = torch.zeros((data.shape[0], 13, data.shape[1], data.shape[2]), device=device) - 1
     # smoothen the data from -1 ~ -0.8
     if smooth:
-        output_array += torch.randn((data.shape[0], 13, data.shape[1], data.shape[2]), device=device) * 0.1
+        output_array += 0.1
 
     # get chanel positions
     img_indices = torch.arange(data.shape[0]).unsqueeze(1).unsqueeze(2)
@@ -367,14 +385,15 @@ def decode_data(data, probability=False):
 
 # --- GANs Parameters --- #
 # load models
-LOAD_MODELS = False
-MODEL_NAME = "1. GreenSpace_Lite"
+LOAD_MODELS = True
+MODEL_NAME = "4. FairwayForge4"
 BACKUP = None
-EPOCHS = 100
-GENERATOR_LEARNING_RATE = 0.0003
-DISCRIMINATOR_LEARNING_RATE = 0.0003
+EPOCHS = 1000
 
-BATCH_SIZE = 256
+GENERATOR_LEARNING_RATE = 0.0002
+DISCRIMINATOR_LEARNING_RATE = 0.0002
+
+BATCH_SIZE = 4
 LATENT_SPACE = 100
 IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = GIRD_SIZE[0], GIRD_SIZE[1], 13
 
@@ -396,11 +415,11 @@ else:
 # Set the device (GPU or CPU)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("#########################################################################")
-print(f"Using {torch.cuda.get_device_name(torch.cuda.current_device())} for Training the {MODEL_NAME} Network")
+print(f"Using {torch.cuda.get_device_name(torch.cuda.current_device())} for Training the {MODEL_NAME} GANs")
 print("#########################################################################")
 
 # GAN model
-model = DCGAN(LOAD_MODELS, BACKUP, MODEL_NAME)
+model = DCGAN(LOAD_MODELS, BACKUP, MODEL_NAME, num_feat_maps_gen=100, num_feat_maps_dis=120)
 model.to(DEVICE)
 
 # optimizers
@@ -412,7 +431,8 @@ dataset = CustomDataset(TRAIN_DATA, DEVICE)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 if START_EPOCH == 0:
-    generate_epoch_image(model, DEVICE, START_EPOCH)
+    generate_epoch_image(model, DEVICE, 0)
+    generate_epoch_image(model, DEVICE, 0, iterations=True)
 
-# train dataset
-log = train(START_EPOCH, EPOCHS, model, dataloader, optim_gen, optim_disc, LATENT_SPACE, DEVICE, LOG)
+# train Model
+log = train(START_EPOCH, EPOCHS, model, dataloader, optim_gen, optim_disc, LATENT_SPACE, DEVICE, LOG, MODEL_NAME)
