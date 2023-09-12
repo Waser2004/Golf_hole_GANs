@@ -80,14 +80,14 @@ class GUI(object):
         self.label_tool = None
 
         self.colors = [(50, 205, 50), (104, 155, 64), (33, 153, 50), (20, 101, 33), (17, 76, 25), (210, 180, 140), (240, 230, 140), (17, 48, 25), (70, 130, 180), (255, 255, 255), (128, 128, 128), (226, 114, 91)]
-        self.color_texts = ["green", "tee", "fairway", "semi\nrough", "high\nrough", "bunker", "waste\narea", "forest", "water", "out", "path", "house"]
+        self.color_texts = ["Green", "Tee", "Fairway", "Semi\nRough", "High\nRough", "Bunker", "Waste\nArea", "Wald", "Wasser", "Out", "Weg", "Haus"]
 
         self.color_labels = []
 
         # label fields
         self.label_back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-(len(self.colors)*50)//2-38, self.WINDOW_SIZE[1]-75, len(self.colors)*50, 50, None, (240, 240, 240), 6)
         for i, txt in enumerate(zip(self.color_texts, self.colors)):
-            back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-(i*50)//2-33, self.WINDOW_SIZE[1]-70, 40, 40, txt[1], (240, 240, 240), 2)
+            back = Advanced_Rectangle(self.canvas, self.WINDOW_SIZE[0]//2-(i*50)//2-33, self.WINDOW_SIZE[1]-70, 40, 40, txt[1], txt[1], 2)
             text = Advanced_Text(self.canvas, self.WINDOW_SIZE[0]//2-(i*50)//2-23, self.WINDOW_SIZE[1]-50, txt[0], (0, 0, 0), self.F3, "center")
             self.color_labels.append([back, text])
 
@@ -362,7 +362,7 @@ class GUI(object):
             outline_points, outline_scale = self.outline_gen.get_data()
 
             # open the csv file and read all the rows
-            with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", "r") as csv_file:
+            with open("Data_set/Dataset.csv", "r") as csv_file:
                 csv_reader = csv.reader(csv_file)
                 rows = [row for row in csv_reader]
 
@@ -373,34 +373,34 @@ class GUI(object):
                         # modify rows
                         rows[i] = [os.path.basename(self.file_path)[0:6], ratio, start_pos, end_pos, norm_points_poly, norm_colors, outline_points, outline_scale]
                         # write rows to csv file
-                        with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", 'w', newline='') as csv_file:
+                        with open("Data_set/Dataset.csv", 'w', newline='') as csv_file:
                             csv_writer = csv.writer(csv_file)
                             csv_writer.writerows(rows)
                         break
             else:
                 # save new row
-                with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", "a") as csv_file:
+                with open("Data_set/Dataset.csv", "a") as csv_file:
                     csv_writer = csv.writer(csv_file)
                     csv_writer.writerow([os.path.basename(self.file_path)[0:6], ratio, start_pos, end_pos, norm_points_poly, norm_colors, outline_points, outline_scale])
 
             # open the csv file and read all the rows
-            with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", "r") as csv_file:
+            with open("Data_set/Dataset.csv", "r") as csv_file:
                 csv_reader = csv.reader(csv_file)
                 rows = [row for row in csv_reader if row]
             # write rows to csv file
-            with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", 'w', newline='') as csv_file:
+            with open("Data_set/Dataset.csv", 'w', newline='') as csv_file:
                 csv_writer = csv.writer(csv_file)
                 csv_writer.writerows(rows)
 
     # select image but is pressed
     def select_image_but_press(self):
         # search for already saved data
-        with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", "r") as csv_file:
+        with open("Data_set/Dataset.csv", "r") as csv_file:
             csv_reader = csv.reader(csv_file)
             rows = [row[0] for row in csv_reader if len(row) > 0]
 
         # search for already saved files
-        file_list = [filename for filename in os.listdir("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\2. Schule\\Maturarbeit\\Golf_course_IMGs") if
+        file_list = [filename for filename in os.listdir("Golf hole images") if
                      rows.count(filename[0:6])]
 
         # define file types
@@ -418,7 +418,7 @@ class GUI(object):
             )
 
         # load Image
-        file = filedialog.askopenfilename(initialdir="D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\2. Schule\\Maturarbeit\\Golf_course_IMGs", filetypes=filetypes)
+        file = filedialog.askopenfilename(initialdir="Golf hole images", filetypes=filetypes)
         # assign file path
         if file != "":
             # clear data
@@ -443,7 +443,7 @@ class GUI(object):
         self.load_image()
 
         # open the csv file and read all the rows
-        with open("D:\\Ondrive\\OneDrive - Venusnet\\Dokumente\\6.Programieren\\2. Python\\Golf_hole_GANs\\Data_set\\Dataset.csv", "r") as csv_file:
+        with open("Data_set/Dataset.csv", "r") as csv_file:
             csv_reader = csv.reader(csv_file)
             rows = [row for row in csv_reader if row and row[0] == os.path.basename(self.file_path)[0:6]]
 

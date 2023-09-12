@@ -1091,7 +1091,7 @@ class Polygon(object):
         # assign variables
         self.canvas = canvas
 
-        self.points = points
+        self.points = [val for xy in points for val in xy]
         self.color = list(color)
         self.outline_thickness = outline_thickness
         self.outline_color = list(outline_color)
@@ -1121,14 +1121,74 @@ class Polygon(object):
             "outline_color": []
         }
 
-    # draw
     def draw(self):
-        # draw on canvas
+        # draw object on the screen if it has not already been drawn
         if self.object is None:
             self.object = self.canvas.create_polygon(self.points, fill=self.__rgb_to_hex(self.color),
                                                      width=self.outline_thickness,
                                                      outline=None if self.outline_thickness == 0 else self.__rgb_to_hex(
                                                          self.color))
+        # update widget
+        else:
+            self.canvas.coords(self.object, self.points)
+            self.canvas.itemconfig(self.object, fill=self.__rgb_to_hex(self.color), width=self.outline_thickness,
+                                   outline=None if self.outline_thickness == 0 else self.__rgb_to_hex(self.color))
+
+    def delete(self):
+        # erase object from the screen if it has been drawn before
+        if self.object is not None:
+            self.canvas.delete(self.object)
+            self.object = None
+
+    # update points parameter
+    def set_points(self, points: list[[float, float]], animation: bool = False, animation_time: float = 1.0,
+                   animation_type: str = "ease"):
+        points = [val for xy in points for val in xy]
+        # update variable
+        if animation is False:
+            self.points = points
+            self.draw()
+        # animate variable
+        else:
+            if len(self.points) < len(points):
+                self.points = self.points + [val for _ in range((len(points) - len(self.points)) // 2) for val in self.points[-2:]]
+            elif len(self.points) > len(points):
+                points = points + [val for _ in range((len(self.points) - len(points)) // 2) for val in points[-2:]]
+            self.__animate_parameter("points", self.points, points, animation_time, animation_type)
+
+    # update color parameter
+    def set_color(self, color: [int, int, int], animation: bool = False, animation_time: float = 1.0,
+                  animation_type: str = "ease"):
+        # update variable
+        if not animation:
+            self.color = color
+            self.draw()
+        # animate variable
+        else:
+            self.__animate_parameter("color", self.color, color, animation_time, animation_type)
+
+    # update outline thickness parameter
+    def set_outline_thickness(self, outline_thickness: int, animation: bool = False, animation_time: float = 1.0,
+                              animation_type: str = "ease"):
+        # update variable
+        if not animation:
+            self.outline_thickness = outline_thickness
+            self.draw()
+        # animate variable
+        else:
+            self.__animate_parameter("outline_thickness", self.outline_thickness, outline_thickness, animation_time,
+                                     animation_type)
+
+    # update outline_color parameter
+    def set_outline_color(self, outline_color: [int, int, int], animation: bool = False, animation_time: float = 1.0,
+                          animation_type: str = "ease"):
+        # update variable
+        if not animation:
+            self.outline_color = outline_color
+            self.draw()
+        # animate variable
+        else:
+            self.__animate_parameter("outline_color", self.outline_color, outline_color, animation_time, animation_type)
 
     # animate parameters
     def __animate_parameter(self, parameter_name: str, animation_start: float, animation_end: float,

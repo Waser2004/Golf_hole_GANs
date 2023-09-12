@@ -6,7 +6,7 @@ generator = Golf_Hole_Generator()
 
 start = time.time()
 i = 0
-loops = 10_000 - 2_390
+loops = 10_000
 while i < loops:
     print(f"Hole: {i + 1} / {loops}")
     random.seed(i)

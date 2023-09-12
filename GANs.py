@@ -38,7 +38,7 @@ data_aug = Augmentation()
 
 # convert data
 DATA = data_aug.augment_data(grid_size=GIRD_SIZE, box_size=BOX_SIZE)
-DATA += data_conv.convert_all_procedural()
+# DATA += data_conv.convert_all_procedural()
 
 print(len(DATA))
 
@@ -71,23 +71,28 @@ class DCGAN(torch.nn.Module):
             nn.BatchNorm2d(num_feat_maps_gen * 16),
             nn.LeakyReLU(inplace=True),
             # (num_feat_maps_gen * 16, 4, 4)
-            nn.ConvTranspose2d(num_feat_maps_gen * 16, num_feat_maps_gen * 8, kernel_size=9, stride=2, padding=0, bias=False),
+            nn.ConvTranspose2d(num_feat_maps_gen * 16, num_feat_maps_gen * 8, kernel_size=9, stride=2, padding=0,
+                               bias=False),
             nn.BatchNorm2d(num_feat_maps_gen * 8),
             nn.LeakyReLU(inplace=True),
             # (num_feat_maps_gen * 8, 15, 15)
-            nn.ConvTranspose2d(num_feat_maps_gen * 8, num_feat_maps_gen * 8, kernel_size=7, stride=2, padding=2, bias=False),
+            nn.ConvTranspose2d(num_feat_maps_gen * 8, num_feat_maps_gen * 8, kernel_size=7, stride=2, padding=2,
+                               bias=False),
             nn.BatchNorm2d(num_feat_maps_gen * 8),
             nn.LeakyReLU(inplace=True),
             # (num_feat_maps_gen * 8, 31, 31)
-            nn.ConvTranspose2d(num_feat_maps_gen * 8, num_feat_maps_gen * 4, kernel_size=4, stride=(1, 2), padding=1, bias=False),
+            nn.ConvTranspose2d(num_feat_maps_gen * 8, num_feat_maps_gen * 4, kernel_size=4, stride=(1, 2), padding=1,
+                               bias=False),
             nn.BatchNorm2d(num_feat_maps_gen * 4),
             nn.LeakyReLU(inplace=True),
             # (num_feat_maps_gen * 4, 32, 62)
-            nn.ConvTranspose2d(num_feat_maps_gen * 4, num_feat_maps_gen * 2, kernel_size=4, stride=2, padding=0, bias=False),
+            nn.ConvTranspose2d(num_feat_maps_gen * 4, num_feat_maps_gen * 2, kernel_size=4, stride=2, padding=0,
+                               bias=False),
             nn.BatchNorm2d(num_feat_maps_gen * 2),
             nn.LeakyReLU(inplace=True),
             # (num_feat_maps_gen * 2, 66, 126)
-            nn.ConvTranspose2d(num_feat_maps_gen * 2, num_feat_maps_gen, kernel_size=4, stride=1, padding=(3, 2), bias=False),
+            nn.ConvTranspose2d(num_feat_maps_gen * 2, num_feat_maps_gen, kernel_size=4, stride=1, padding=(3, 2),
+                               bias=False),
             nn.BatchNorm2d(num_feat_maps_gen),
             nn.LeakyReLU(inplace=True),
             # (num_feat_maps_gen, 63, 125)
@@ -98,10 +103,10 @@ class DCGAN(torch.nn.Module):
 
         # load Generator parameters
         if load and backup is None:
-            gen_state_dict = torch.load(f"D:/4. Programmieren/Golf_hole_GANs/Models/{name}/Generator.pth")
+            gen_state_dict = torch.load(f"Model Data/Models/{name}/Generator.pth")
             self.generator.load_state_dict(gen_state_dict)
         elif backup is not None:
-            gen_state_dict = torch.load(f"D:/4. Programmieren/Golf_hole_GANs/Models/{name}/Backups/Generator_{backup}.pth")
+            gen_state_dict = torch.load(f"Model Data/Models/{name}/Backups/Generator_{backup}.pth")
             self.generator.load_state_dict(gen_state_dict)
 
         self.discriminator = nn.Sequential(
@@ -135,11 +140,11 @@ class DCGAN(torch.nn.Module):
 
         # load discriminator parameters
         if load and backup is None:
-            disc_state_dict = torch.load(f"D:/4. Programmieren/Golf_hole_GANs/Models/{name}/Discriminator.pth")
+            disc_state_dict = torch.load(f"Model Data/Models/{name}/Discriminator.pth")
             self.discriminator.load_state_dict(disc_state_dict)
         # load backup
         elif backup is not None:
-            disc_state_dict = torch.load(f"D:/4. Programmieren/Golf_hole_GANs/Models/{name}/Backups/Discriminator_{backup}.pth")
+            disc_state_dict = torch.load(f"Model Data/Models/{name}/Backups/Discriminator_{backup}.pth")
             self.discriminator.load_state_dict(disc_state_dict)
 
     def generator_forward(self, z):
@@ -187,12 +192,12 @@ def generate_epoch_image(model, device, epoch, iterations=False):
     # save image
     image = Image.fromarray(parent_image)
     if not iterations:
-        image.save(f'D:/4. Programmieren/Golf_hole_GANs/Generated_Images/{MODEL_NAME}/Epoch_{epoch}.png')
+        image.save(f'Model Data/Generated_Images/{MODEL_NAME}/Epoch_{epoch}.png')
 
         print("\r", end="")
         print("[----- Complete -----] 100%")
     else:
-        image.save(f'D:/4. Programmieren/Golf_hole_GANs/Generated_Images/{MODEL_NAME}/Iterations/Iteration_{epoch}.png')
+        image.save(f'Model Data/Generated_Images/{MODEL_NAME}/Iterations/Iteration_{epoch}.png')
 
 
 # Training loop
@@ -319,18 +324,18 @@ def train(start_epoch, epochs, model, data, gen_optimizer, disc_optimizer, laten
         log["elapsed_time"].append(time.time() - start)
 
         # save backup
-        torch.save(model.generator.state_dict(), f"D:/4. Programmieren/Golf_hole_GANs/Models/{model_name}/Backups/Generator_{epoch + 1 + start_epoch}.pth")
-        torch.save(model.discriminator.state_dict(), f"D:/4. Programmieren/Golf_hole_GANs/Models/{model_name}/Backups/Discriminator_{epoch + 1 + start_epoch}.pth")
+        torch.save(model.generator.state_dict(), f"Model Data/Models/{model_name}/Backups/Generator_{epoch + 1 + start_epoch}.pth")
+        torch.save(model.discriminator.state_dict(), f"Model Data/Models/{model_name}/Backups/Discriminator_{epoch + 1 + start_epoch}.pth")
 
-        with open(f"D:/4. Programmieren/Golf_hole_GANs/Models/{model_name}/Backups/log_{epoch + 1 + start_epoch}.json", 'w') as file:
+        with open(f"Model Data/Models/{model_name}/Backups/log_{epoch + 1 + start_epoch}.json", 'w') as file:
             json.dump(log, file)
 
         # save Models
-        torch.save(model.generator.state_dict(), f"D:/4. Programmieren/Golf_hole_GANs/Models/{model_name}/Generator.pth")
-        torch.save(model.discriminator.state_dict(), f"D:/4. Programmieren/Golf_hole_GANs/Models/{model_name}/Discriminator.pth")
+        torch.save(model.generator.state_dict(), f"Model Data/Models/{model_name}/Generator.pth")
+        torch.save(model.discriminator.state_dict(), f"Model Data/Models/{model_name}/Discriminator.pth")
 
         # save log data
-        with open(f'D:/4. Programmieren/Golf_hole_GANs/Models/{model_name}/log.json', 'w') as file:
+        with open(f'Model Data/Models/{model_name}/log.json', 'w') as file:
             json.dump(log, file)
 
         # generate image
@@ -386,25 +391,25 @@ def decode_data(data, probability=False):
 # --- GANs Parameters --- #
 # load models
 LOAD_MODELS = True
-MODEL_NAME = "4. FairwayForge4"
+MODEL_NAME = "1. GreenSpace_Lite"
 BACKUP = None
 EPOCHS = 1000
 
 GENERATOR_LEARNING_RATE = 0.0002
 DISCRIMINATOR_LEARNING_RATE = 0.0002
 
-BATCH_SIZE = 4
+BATCH_SIZE = 128
 LATENT_SPACE = 100
 IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = GIRD_SIZE[0], GIRD_SIZE[1], 13
 
 # load prev log
-if os.listdir(f"D:/4. Programmieren/Golf_hole_GANs/Models/{MODEL_NAME}").count("log.json") and LOAD_MODELS and BACKUP is None:
-    with open(f"D:/4. Programmieren/Golf_hole_GANs/Models/{MODEL_NAME}/log.json", "r") as json_file:
+if os.listdir(f"Model Data/Models/{MODEL_NAME}").count("log.json") and LOAD_MODELS and BACKUP is None:
+    with open(f"Model Data/Models/{MODEL_NAME}/log.json", "r") as json_file:
         LOG = json.load(json_file)
         START_EPOCH = LOG["elapsed_epochs"]
 # load backup
 elif BACKUP is not None:
-    with open(f"D:/4. Programmieren/Golf_hole_GANs/Models/{MODEL_NAME}/Backups/log_{BACKUP}.json", "r") as json_file:
+    with open(f"Model Data/Models/{MODEL_NAME}/Backups/log_{BACKUP}.json", "r") as json_file:
         LOG = json.load(json_file)
         START_EPOCH = LOG["elapsed_epochs"]
 # all new model

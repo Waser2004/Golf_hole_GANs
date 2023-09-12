@@ -511,7 +511,7 @@ class Map(object):
         self.origin_but_pos = [x, y]
 
         self.origin_but = Advanced_Rectangle(self.canvas, x, y, 25, 25, None, (240, 240, 240), 2)
-        self.origin_img = Advanced_Image(self.canvas, x+1, y+1, "C:\\Users\\nicow\\PycharmProjects\\Golf_hole_GANs\\Icons\\origin_icon.png")
+        self.origin_img = Advanced_Image(self.canvas, x+1, y+1, "Icons\\origin_icon.png")
 
     # change origin button pos
     def set_origin_button_pos(self, x: int, y: int):
