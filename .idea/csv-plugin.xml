@@ -17,13 +17,6 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\Data_set\Procedural_Dataset.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
       </map>
     </option>
   </component>
